@@ -1,11 +1,13 @@
 import anthropic
 import base64
 import os
+import time
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from urllib.parse import quote
+from collections import defaultdict
 
 API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
@@ -19,6 +21,23 @@ HEADERS = {
     "Accept-Language": "nl-NL,nl;q=0.9",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
+
+# Rate limiting: max 5 verzoeken per IP per minuut
+RATE_LIMIT = 5
+RATE_WINDOW = 60  # seconden
+ip_requests = defaultdict(list)
+
+
+def check_rate_limit(ip):
+    nu = time.time()
+    verzoeken = ip_requests[ip]
+    # Verwijder verzoeken ouder dan het tijdvenster
+    ip_requests[ip] = [t for t in verzoeken if nu - t < RATE_WINDOW]
+    if len(ip_requests[ip]) >= RATE_LIMIT:
+        wacht = int(RATE_WINDOW - (nu - ip_requests[ip][0]))
+        return False, wacht
+    ip_requests[ip].append(nu)
+    return True, 0
 
 
 def detecteer_media_type(data_bytes):
@@ -35,7 +54,7 @@ def detecteer_media_type(data_bytes):
 def herken_product(image_data, media_type):
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=200,
+        max_tokens=50,
         messages=[{
             "role": "user",
             "content": [
@@ -49,12 +68,14 @@ def herken_product(image_data, media_type):
                 },
                 {
                     "type": "text",
-                    "text": "Wat is dit voor product? Geef alleen de merknaam en modelnaam, zo specifiek mogelijk. Bijvoorbeeld: 'Samsung QE55Q80C' of 'LEGO Technic 42120'."
+                    "text": "Wat is dit voor product? Geef alleen de merknaam en productnaam, zo kort en specifiek mogelijk. Maximaal 4 woorden. Geen beschrijving, geen extra tekst. Bijvoorbeeld: 'Dobble' of 'LEGO Technic 42120' of 'Samsung QE55Q80C'."
                 }
             ],
         }]
     )
-    return response.content[0].text
+    naam = response.content[0].text.strip()
+    naam = naam.split("\n")[0].split(".")[0].strip()
+    return naam
 
 
 def scrape_bol(productnaam):
@@ -148,6 +169,11 @@ def voorwaarden():
 
 @app.route("/herken", methods=["POST"])
 def herken():
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
+    toegestaan, wacht = check_rate_limit(ip)
+    if not toegestaan:
+        return jsonify({"fout": f"Te veel verzoeken. Probeer het over {wacht} seconden opnieuw."}), 429
+
     if "foto" not in request.files:
         return jsonify({"fout": "Geen foto ontvangen"}), 400
     bestand = request.files["foto"]
@@ -156,6 +182,7 @@ def herken():
     data_bytes = bestand.read()
     if len(data_bytes) == 0:
         return jsonify({"fout": "Bestand is leeg"}), 400
+
     media_type = detecteer_media_type(data_bytes)
     image_data = base64.standard_b64encode(data_bytes).decode("utf-8")
     productnaam = herken_product(image_data, media_type)

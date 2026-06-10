@@ -1,74 +1,343 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Privacybeleid — CompariScan</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #222; }
-    header { background: #0a2540; color: white; padding: 20px 40px; }
-    header a { font-size: 1.5rem; font-weight: 700; text-decoration: none; color: white; }
-    header a span { color: #4fc3f7; }
-    .content { max-width: 760px; margin: 60px auto; padding: 0 24px 80px; }
-    h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
-    .datum { color: #999; font-size: 0.9rem; margin-bottom: 40px; }
-    h2 { font-size: 1.1rem; font-weight: 700; margin: 32px 0 10px; }
-    p { font-size: 0.95rem; line-height: 1.7; color: #444; margin-bottom: 12px; }
-    ul { padding-left: 20px; margin-bottom: 12px; }
-    ul li { font-size: 0.95rem; line-height: 1.7; color: #444; margin-bottom: 4px; }
-    footer { background: #0a2540; color: #888; text-align: center; padding: 28px 20px; font-size: 0.85rem; }
-    footer a { color: #4fc3f7; text-decoration: none; margin: 0 8px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CompariScan — Vergelijk productprijzen met je camera</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #222; }
+
+        header {
+            background: #0a2540;
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        header .logo { font-size: 1.5rem; font-weight: 700; }
+        header .logo span { color: #4fc3f7; }
+        nav a { color: #ccc; text-decoration: none; margin-left: 24px; font-size: 0.95rem; }
+        nav a:hover { color: white; }
+
+        .tool-sectie {
+            background: linear-gradient(135deg, #0a2540 0%, #1565c0 100%);
+            padding: 60px 20px;
+            text-align: center;
+            color: white;
+        }
+        .tool-sectie h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 10px; line-height: 1.2; }
+        .tool-sectie h1 span { color: #4fc3f7; }
+        .tool-sectie p { font-size: 1rem; color: #b0c4de; margin-bottom: 32px; }
+
+        .tool-box {
+            background: white;
+            border-radius: 14px;
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 28px 24px;
+            color: #222;
+        }
+
+        .upload-sectie {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 24px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .upload-sectie:hover { border-color: #0a2540; }
+        .upload-sectie input[type="file"] { display: none; }
+        .upload-label { font-size: 15px; color: #666; cursor: pointer; }
+
+        #foto-preview {
+            display: none;
+            width: 100%;
+            max-height: 220px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        button {
+            margin-top: 14px;
+            display: block;
+            width: 100%;
+            padding: 13px;
+            font-size: 16px;
+            background-color: #0a2540;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+            font-weight: 700;
+        }
+        button:disabled { background-color: #aaa; cursor: not-allowed; }
+        button:hover:not(:disabled) { background-color: #1565c0; }
+
+        #laadindicator {
+            display: none;
+            margin-top: 16px;
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            font-size: 14px;
+        }
+        .spinner {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border: 2px solid #ccc;
+            border-top-color: #0a2540;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #resultaat { display: none; margin-top: 22px; }
+
+        .productheader {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            background: #f5f7fa;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+        #productfoto {
+            width: 72px;
+            height: 72px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: #ddd;
+        }
+        .productnaam { font-size: 15px; font-weight: 700; line-height: 1.4; color: #222; }
+
+        .winkel-kaart {
+            background: #f5f7fa;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 2px solid transparent;
+        }
+        .winkel-kaart.goedkoopst { border-color: #2a9d2a; background: #f0faf0; }
+        .winkel-kaart.niet-gevonden { opacity: 0.45; }
+        .winkel-info { display: flex; align-items: center; gap: 10px; }
+        .winkel-naam { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+        .goedkoopst-label {
+            font-size: 11px; background: #2a9d2a; color: white;
+            padding: 2px 7px; border-radius: 4px; font-weight: 400;
+        }
+        .winkel-prijs { font-size: 22px; font-weight: 700; color: #c00; }
+        .niet-gevonden-tekst { font-size: 14px; color: #aaa; }
+        .winkel-link { display: inline-block; margin-top: 4px; font-size: 13px; color: #1565c0; text-decoration: none; }
+        .winkel-link:hover { text-decoration: underline; }
+
+        #fout {
+            display: none;
+            margin-top: 14px;
+            padding: 12px 16px;
+            background: #fff0f0;
+            border: 1px solid #f5c0c0;
+            border-radius: 8px;
+            color: #c00;
+            font-size: 14px;
+        }
+
+        .steps {
+            display: flex; justify-content: center; gap: 32px;
+            padding: 70px 40px; flex-wrap: wrap; background: white;
+        }
+        .step { text-align: center; max-width: 220px; }
+        .step .icon { font-size: 2.8rem; margin-bottom: 16px; }
+        .step h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+        .step p { font-size: 0.9rem; color: #666; line-height: 1.5; }
+
+        .features { background: #f5f7fa; padding: 70px 40px; text-align: center; }
+        .features h2 { font-size: 1.9rem; font-weight: 800; margin-bottom: 48px; }
+        .feature-grid { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+        .feature-card {
+            background: white; border-radius: 12px; padding: 28px 24px;
+            max-width: 240px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); text-align: left;
+        }
+        .feature-card .icon { font-size: 1.8rem; margin-bottom: 12px; }
+        .feature-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+        .feature-card p { font-size: 0.88rem; color: #666; line-height: 1.5; }
+
+        .partners { background: white; padding: 60px 40px; text-align: center; }
+        .partners h2 { font-size: 1.2rem; color: #999; font-weight: 500; margin-bottom: 32px; text-transform: uppercase; letter-spacing: 1px; }
+        .partner-logos { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; align-items: center; }
+        .partner-logos span { font-size: 1.4rem; font-weight: 800; color: #aaa; }
+
+        footer { background: #0a2540; color: #888; text-align: center; padding: 28px 20px; font-size: 0.85rem; }
+        footer a { color: #4fc3f7; text-decoration: none; margin: 0 8px; }
+        footer a:hover { text-decoration: underline; }
+    </style>
 </head>
 <body>
-  <header>
-    <a href="index.html">Compari<span>Scan</span></a>
-  </header>
 
-  <div class="content">
-    <h1>Privacybeleid</h1>
-    <p class="datum">Laatst bijgewerkt: juni 2026</p>
+    <header>
+        <div class="logo">Compari<span>Scan</span></div>
+        <nav>
+            <a href="#hoe-werkt-het">Hoe werkt het?</a>
+            <a href="#functies">Functies</a>
+        </nav>
+    </header>
 
-    <h2>1. Wie zijn wij?</h2>
-    <p>CompariScan is een prijsvergelijkingsservice waarmee gebruikers via een foto een product kunnen herkennen en de prijs kunnen vergelijken bij Nederlandse webshops.</p>
+    <section class="tool-sectie">
+        <h1>Maak een foto,<br/>vergelijk de <span>beste prijs</span></h1>
+        <p>CompariScan herkent elk product via je camera en zoekt direct de laagste prijs bij Nederlandse webshops.</p>
 
-    <h2>2. Welke gegevens verzamelen wij?</h2>
-    <p>CompariScan verzamelt zo min mogelijk persoonsgegevens. Wij verwerken de volgende gegevens:</p>
-    <ul>
-      <li>Foto's die je uploadt voor productherkenning — deze worden niet opgeslagen na verwerking</li>
-      <li>Technische gegevens zoals IP-adres en browsertype via standaard serverlogboeken</li>
-    </ul>
+        <div class="tool-box">
+            <div class="upload-sectie" onclick="document.getElementById('foto').click()">
+                <img id="foto-preview" src="" alt="Preview">
+                <label class="upload-label" id="upload-label">📂 Klik om een foto te kiezen</label>
+                <input type="file" id="foto" accept="image/*" capture="environment">
+            </div>
 
-    <h2>3. Waarvoor gebruiken wij je gegevens?</h2>
-    <p>De geüploade foto wordt uitsluitend gebruikt om het product te herkennen en een prijsvergelijking te tonen. De foto wordt niet opgeslagen, gedeeld of gebruikt voor andere doeleinden.</p>
+            <button id="knop" onclick="herken()">🔍 Herken product & vergelijk prijzen</button>
 
-    <h2>4. Delen wij gegevens met derden?</h2>
-    <p>CompariScan maakt gebruik van de volgende externe diensten:</p>
-    <ul>
-      <li><strong>Anthropic (Claude AI)</strong> — voor productherkenning via de foto.</li>
-      <li><strong>Bol.com</strong> — als affiliate partner voor prijsdata.</li>
-    </ul>
-    <p>Wij verkopen geen persoonsgegevens aan derden.</p>
+            <p id="laadindicator"><span class="spinner"></span>Product wordt herkend en prijzen worden opgezocht... (kan 15 seconden duren)</p>
 
-    <h2>5. Cookies</h2>
-    <p>CompariScan maakt geen gebruik van tracking cookies of advertentiecookies.</p>
+            <div id="fout"></div>
 
-    <h2>6. Jouw rechten</h2>
-    <p>Op grond van de AVG heb je het recht op inzage, correctie en verwijdering van je persoonsgegevens. Omdat wij geen persoonsgegevens opslaan, is er in de meeste gevallen niets te verwijderen.</p>
+            <div id="resultaat">
+                <div class="productheader">
+                    <img id="productfoto" src="" alt="Productfoto">
+                    <div class="productnaam" id="productnaam"></div>
+                </div>
+                <div id="winkel-lijst"></div>
+            </div>
+        </div>
+    </section>
 
-    <h2>7. Beveiliging</h2>
-    <p>Wij nemen passende technische maatregelen om je gegevens te beschermen tegen ongeautoriseerde toegang of verlies.</p>
+    <section class="steps" id="hoe-werkt-het">
+        <div class="step"><div class="icon">📷</div><h3>1. Maak een foto</h3><p>Richt je camera op een product — in de winkel, thuis of onderweg.</p></div>
+        <div class="step"><div class="icon">🤖</div><h3>2. Automatische herkenning</h3><p>Onze AI herkent het product en zoekt de exacte naam op.</p></div>
+        <div class="step"><div class="icon">💶</div><h3>3. Vergelijk prijzen</h3><p>Je ziet direct de prijzen bij populaire Nederlandse webshops naast elkaar.</p></div>
+        <div class="step"><div class="icon">🛒</div><h3>4. Koop voor de beste prijs</h3><p>Klik door naar de winkel met de laagste prijs en bestel direct.</p></div>
+    </section>
 
-    <h2>8. Wijzigingen</h2>
-    <p>Dit privacybeleid kan worden aangepast. De meest actuele versie is altijd te vinden op deze pagina.</p>
-  </div>
+    <section class="features" id="functies">
+        <h2>Waarom CompariScan?</h2>
+        <div class="feature-grid">
+            <div class="feature-card"><div class="icon">⚡</div><h4>Razendsnel</h4><p>Binnen enkele seconden zie je de prijzen van meerdere winkels.</p></div>
+            <div class="feature-card"><div class="icon">🇳🇱</div><h4>Nederlandse winkels</h4><p>We vergelijken prijzen bij bekende Nederlandse webshops zoals Bol.com en Coolblue.</p></div>
+            <div class="feature-card"><div class="icon">📱</div><h4>Werkt op elk apparaat</h4><p>Gebruik CompariScan op je telefoon, tablet of computer.</p></div>
+            <div class="feature-card"><div class="icon">🔒</div><h4>Geen account nodig</h4><p>Gewoon de site openen en een foto maken — klaar.</p></div>
+        </div>
+    </section>
 
-  <footer>
-    <p>© 2026 CompariScan
-      <a href="privacy.html">Privacybeleid</a>
-      <a href="voorwaarden.html">Algemene voorwaarden</a>
-    </p>
-  </footer>
+    <section class="partners">
+        <h2>Prijzen ophalen bij</h2>
+        <div class="partner-logos">
+            <span>bol.com</span>
+            <span>Coolblue</span>
+        </div>
+    </section>
+
+    <footer>
+        <p>© 2026 CompariScan
+            <a href="/privacy.html">Privacybeleid</a>
+            <a href="/voorwaarden.html">Algemene voorwaarden</a>
+        </p>
+    </footer>
+
+    <script>
+        document.getElementById("foto").addEventListener("change", function () {
+            const foto = this.files[0];
+            if (!foto) return;
+            const preview = document.getElementById("foto-preview");
+            preview.src = URL.createObjectURL(foto);
+            preview.style.display = "block";
+            document.getElementById("upload-label").textContent = foto.name;
+        });
+
+        async function herken() {
+            const foto = document.getElementById("foto").files[0];
+            if (!foto) { alert("Kies eerst een foto!"); return; }
+
+            document.getElementById("knop").disabled = true;
+            document.getElementById("laadindicator").style.display = "block";
+            document.getElementById("resultaat").style.display = "none";
+            document.getElementById("fout").style.display = "none";
+
+            const formData = new FormData();
+            formData.append("foto", foto);
+
+            try {
+                const response = await fetch("/herken", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error("Serverfout: " + response.status);
+                const data = await response.json();
+
+                const bolResultaat = data.prijzen.find(w => w.afbeelding);
+                document.getElementById("productfoto").src = bolResultaat
+                    ? bolResultaat.afbeelding
+                    : URL.createObjectURL(foto);
+                document.getElementById("productnaam").textContent = data.productnaam;
+
+                const gevondenPrijzen = data.prijzen.filter(w => w.gevonden).map(w => w.prijs);
+                const goedkoopste = gevondenPrijzen.length > 0 ? Math.min(...gevondenPrijzen) : null;
+
+                const lijst = document.getElementById("winkel-lijst");
+                lijst.innerHTML = "";
+
+                data.prijzen.forEach(winkel => {
+                    const isGoedkoopst = winkel.gevonden && winkel.prijs === goedkoopste;
+                    const kaart = document.createElement("div");
+
+                    if (!winkel.gevonden) {
+                        kaart.className = "winkel-kaart niet-gevonden";
+                        kaart.innerHTML = `
+                            <div class="winkel-info">
+                                <span style="font-size:22px">${winkel.logo}</span>
+                                <div class="winkel-naam">${winkel.winkel}</div>
+                            </div>
+                            <div class="niet-gevonden-tekst">Niet gevonden</div>`;
+                    } else {
+                        kaart.className = "winkel-kaart" + (isGoedkoopst ? " goedkoopst" : "");
+                        kaart.innerHTML = `
+                            <div class="winkel-info">
+                                <span style="font-size:22px">${winkel.logo}</span>
+                                <div>
+                                    <div class="winkel-naam">
+                                        ${winkel.winkel}
+                                        ${isGoedkoopst ? '<span class="goedkoopst-label">Goedkoopst</span>' : ""}
+                                    </div>
+                                    <a class="winkel-link" href="${winkel.link}" target="_blank">🛒 Bekijk aanbieding</a>
+                                </div>
+                            </div>
+                            <div class="winkel-prijs">€${winkel.prijs.toFixed(2).replace(".", ",")}</div>`;
+                    }
+                    lijst.appendChild(kaart);
+                });
+
+                document.getElementById("resultaat").style.display = "block";
+
+            } catch (err) {
+                const fout = document.getElementById("fout");
+                fout.textContent = "❌ Er ging iets mis: " + err.message;
+                fout.style.display = "block";
+            } finally {
+                document.getElementById("laadindicator").style.display = "none";
+                document.getElementById("knop").disabled = false;
+            }
+        }
+    </script>
+
 </body>
 </html>

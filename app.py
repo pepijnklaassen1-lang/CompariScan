@@ -4,6 +4,7 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 from urllib.parse import quote
 
 API_KEY = os.environ.get("ANTHROPIC_API_KEY")
@@ -11,6 +12,7 @@ API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 client = anthropic.Anthropic(api_key=API_KEY)
 
 app = Flask(__name__)
+CORS(app)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -138,8 +140,14 @@ def index():
 
 @app.route("/herken", methods=["POST"])
 def herken():
+    if "foto" not in request.files:
+        return jsonify({"fout": "Geen foto ontvangen"}), 400
     bestand = request.files["foto"]
+    if bestand.filename == "":
+        return jsonify({"fout": "Leeg bestand"}), 400
     data_bytes = bestand.read()
+    if len(data_bytes) == 0:
+        return jsonify({"fout": "Bestand is leeg"}), 400
     media_type = detecteer_media_type(data_bytes)
     image_data = base64.standard_b64encode(data_bytes).decode("utf-8")
     productnaam = herken_product(image_data, media_type)

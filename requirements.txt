@@ -2,3 +2,4 @@ flask
 anthropic
 requests
 beautifulsoup4
+flask-cors

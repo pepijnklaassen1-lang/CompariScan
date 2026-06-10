@@ -137,6 +137,14 @@ def haal_prijzen(productnaam):
 def index():
     return send_from_directory(".", "index.html")
 
+@app.route("/privacy.html")
+def privacy():
+    return send_from_directory(".", "privacy.html")
+
+@app.route("/voorwaarden.html")
+def voorwaarden():
+    return send_from_directory(".", "voorwaarden.html")
+
 
 @app.route("/herken", methods=["POST"])
 def herken():

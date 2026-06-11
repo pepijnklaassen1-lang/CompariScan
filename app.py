@@ -228,6 +228,21 @@ def haal_prijzen(productnaam):
     ]
 
 
+
+# ----------------------------------------------------------------------
+# Barcode (EAN) lookup
+# ----------------------------------------------------------------------
+def valideer_ean(code):
+    """Controleer of de code een geldige EAN-8/EAN-13/UPC-A is (incl. controlecijfer)."""
+    if not code or not code.isdigit() or len(code) not in (8, 12, 13):
+        return False
+    cijfers = [int(c) for c in code]
+    controle = cijfers[-1]
+    rest = cijfers[:-1][::-1]
+    som = sum(d * 3 if i % 2 == 0 else d for i, d in enumerate(rest))
+    return (10 - som % 10) % 10 == controle
+
+
 # ----------------------------------------------------------------------
 # Routes
 # ----------------------------------------------------------------------
@@ -288,6 +303,28 @@ def herken():
         "productnaam": productnaam,
         "prijzen": prijzen
     })
+
+
+@app.route("/barcode", methods=["POST"])
+def barcode():
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
+    toegestaan, wacht = check_rate_limit(ip)
+    if not toegestaan:
+        return jsonify({"fout": f"Te veel verzoeken. Probeer het over {wacht} seconden opnieuw."}), 429
+
+    data = request.get_json(silent=True) or {}
+    ean = str(data.get("ean", "")).strip()
+    if not valideer_ean(ean):
+        return jsonify({"fout": "Ongeldige barcode. Controleer de cijfers en probeer het opnieuw."}), 400
+
+    prijzen = haal_prijzen(ean)
+    if not any(w["gevonden"] for w in prijzen):
+        return jsonify({"fout": "Geen product gevonden voor deze barcode."}), 422
+
+    # Nette productnaam: de titel die de eerste winkel teruggeeft
+    productnaam = next((w["naam"] for w in prijzen if w["gevonden"] and w["naam"] != ean), ean)
+
+    return jsonify({"productnaam": productnaam, "prijzen": prijzen})
 
 
 if __name__ == "__main__":

@@ -209,7 +209,6 @@ def haal_prijzen(productnaam):
     return [
         {
             "winkel": "Bol.com",
-            "logo": "🔵",
             "gevonden": bol["gevonden"],
             "naam": bol.get("naam", productnaam),
             "prijs": bol.get("prijs"),
@@ -218,7 +217,6 @@ def haal_prijzen(productnaam):
         },
         {
             "winkel": "Coolblue",
-            "logo": "🔷",
             "gevonden": coolblue["gevonden"],
             "naam": coolblue.get("naam", productnaam),
             "prijs": coolblue.get("prijs"),
@@ -305,6 +303,29 @@ def herken():
     })
 
 
+def zoek_naam_via_ean(ean):
+    """Fallback: productnaam opzoeken via Open Food Facts / Open Products Facts.
+    Veel supermarktproducten (eten, drogisterij) staan niet bij Bol/Coolblue onder hun EAN,
+    maar wel in deze open databases."""
+    bronnen = [
+        f"https://world.openfoodfacts.org/api/v2/product/{ean}.json",
+        f"https://world.openproductsfacts.org/api/v2/product/{ean}.json",
+    ]
+    for url in bronnen:
+        try:
+            resp = requests.get(url, timeout=5, headers={"User-Agent": "CompariScan/1.0 (compariscan.nl)"})
+            data = resp.json()
+            product = data.get("product") or {}
+            naam = (product.get("product_name") or "").strip()
+            merk = (product.get("brands") or "").split(",")[0].strip()
+            if naam:
+                volledig = f"{merk} {naam}".strip() if merk and merk.lower() not in naam.lower() else naam
+                return volledig[:80]
+        except Exception as e:
+            print(f"EAN-database fout ({url}): {e}")
+    return None
+
+
 @app.route("/barcode", methods=["POST"])
 def barcode():
     ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
@@ -317,14 +338,20 @@ def barcode():
     if not valideer_ean(ean):
         return jsonify({"fout": "Ongeldige barcode. Controleer de cijfers en probeer het opnieuw."}), 400
 
+    # Stap 1: rechtstreeks op EAN zoeken bij de winkels
     prijzen = haal_prijzen(ean)
+    productnaam = next((w["naam"] for w in prijzen if w["gevonden"] and w["naam"] != ean), None)
+
+    # Stap 2: niets gevonden? Naam opzoeken in open EAN-databases en daarop zoeken
     if not any(w["gevonden"] for w in prijzen):
-        return jsonify({"fout": "Geen product gevonden voor deze barcode."}), 422
+        naam = zoek_naam_via_ean(ean)
+        if naam:
+            productnaam = naam
+            prijzen = haal_prijzen(naam)
+        else:
+            return jsonify({"fout": "Geen product gevonden voor deze barcode. Mogelijk wordt dit product niet verkocht bij Bol.com of Coolblue."}), 422
 
-    # Nette productnaam: de titel die de eerste winkel teruggeeft
-    productnaam = next((w["naam"] for w in prijzen if w["gevonden"] and w["naam"] != ean), ean)
-
-    return jsonify({"productnaam": productnaam, "prijzen": prijzen})
+    return jsonify({"productnaam": productnaam or ean, "prijzen": prijzen})
 
 
 if __name__ == "__main__":

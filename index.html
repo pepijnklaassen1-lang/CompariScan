@@ -1,343 +1,556 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CompariScan — Vergelijk productprijzen met je camera</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #222; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CompariScan — Vergelijk productprijzen met je camera</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #222; }
 
-        header {
-            background: #0a2540;
-            color: white;
-            padding: 20px 40px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        header .logo { font-size: 1.5rem; font-weight: 700; }
-        header .logo span { color: #4fc3f7; }
-        nav a { color: #ccc; text-decoration: none; margin-left: 24px; font-size: 0.95rem; }
-        nav a:hover { color: white; }
+    header {
+      background: #0a2540;
+      color: white;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header .logo { font-size: 1.5rem; font-weight: 700; }
+    header .logo span { color: #4fc3f7; }
+    nav a { color: #ccc; text-decoration: none; margin-left: 24px; font-size: 0.95rem; }
+    nav a:hover { color: white; }
 
-        .tool-sectie {
-            background: linear-gradient(135deg, #0a2540 0%, #1565c0 100%);
-            padding: 60px 20px;
-            text-align: center;
-            color: white;
-        }
-        .tool-sectie h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 10px; line-height: 1.2; }
-        .tool-sectie h1 span { color: #4fc3f7; }
-        .tool-sectie p { font-size: 1rem; color: #b0c4de; margin-bottom: 32px; }
+    .tool-sectie {
+      background: linear-gradient(135deg, #0a2540 0%, #1565c0 100%);
+      padding: 60px 20px;
+      text-align: center;
+      color: white;
+    }
+    .tool-sectie h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 10px; line-height: 1.2; }
+    .tool-sectie h1 span { color: #4fc3f7; }
+    .tool-sectie > p { font-size: 1rem; color: #b0c4de; margin-bottom: 32px; }
 
-        .tool-box {
-            background: white;
-            border-radius: 14px;
-            max-width: 520px;
-            margin: 0 auto;
-            padding: 28px 24px;
-            color: #222;
-        }
+    .tool-box {
+      background: white;
+      border-radius: 14px;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 28px 24px;
+      color: #222;
+    }
 
-        .upload-sectie {
-            border: 2px dashed #ccc;
-            border-radius: 10px;
-            padding: 24px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: border-color 0.2s;
-        }
-        .upload-sectie:hover { border-color: #0a2540; }
-        .upload-sectie input[type="file"] { display: none; }
-        .upload-label { font-size: 15px; color: #666; cursor: pointer; }
+    /* Tab switcher */
+    .tab-switcher {
+      display: flex;
+      background: #f0f4f8;
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 20px;
+      gap: 4px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 9px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 7px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: auto;
+      margin: 0;
+    }
+    .tab-btn.actief {
+      background: white;
+      color: #0a2540;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    .tab-btn:hover:not(.actief) { color: #444; }
 
-        #foto-preview {
-            display: none;
-            width: 100%;
-            max-height: 220px;
-            object-fit: contain;
-            border-radius: 8px;
-            margin-bottom: 12px;
-        }
+    /* Camera sectie */
+    .camera-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #000;
+    }
+    #camera-stream {
+      width: 100%;
+      max-height: 260px;
+      object-fit: cover;
+      display: block;
+      border-radius: 10px;
+    }
+    #camera-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .camera-kader {
+      width: 180px;
+      height: 180px;
+      border: 2px solid rgba(255,255,255,0.7);
+      border-radius: 12px;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.3);
+    }
+    #camera-placeholder {
+      width: 100%;
+      height: 200px;
+      background: #f0f4f8;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #aaa;
+      font-size: 14px;
+    }
+    #camera-placeholder .cam-icon { font-size: 2.5rem; }
 
-        button {
-            margin-top: 14px;
-            display: block;
-            width: 100%;
-            padding: 13px;
-            font-size: 16px;
-            background-color: #0a2540;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: background-color 0.2s;
-            font-weight: 700;
-        }
-        button:disabled { background-color: #aaa; cursor: not-allowed; }
-        button:hover:not(:disabled) { background-color: #1565c0; }
+    .camera-acties {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .btn-secundair {
+      flex: 1;
+      padding: 11px;
+      font-size: 14px;
+      background: #f0f4f8;
+      color: #0a2540;
+      border: none;
+      cursor: pointer;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: background 0.2s;
+      width: auto;
+      margin: 0;
+    }
+    .btn-secundair:hover { background: #dde4ed; }
+    .btn-snapshot {
+      flex: 2;
+      padding: 11px;
+      font-size: 15px;
+      background: #0a2540;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 8px;
+      font-weight: 700;
+      transition: background 0.2s;
+      width: auto;
+      margin: 0;
+    }
+    .btn-snapshot:hover:not(:disabled) { background: #1565c0; }
+    .btn-snapshot:disabled { background: #aaa; cursor: not-allowed; }
 
-        #laadindicator {
-            display: none;
-            margin-top: 16px;
-            color: #666;
-            font-style: italic;
-            text-align: center;
-            font-size: 14px;
-        }
-        .spinner {
-            display: inline-block;
-            width: 15px;
-            height: 15px;
-            border: 2px solid #ccc;
-            border-top-color: #0a2540;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            vertical-align: middle;
-            margin-right: 6px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
+    #canvas-hidden { display: none; }
 
-        #resultaat { display: none; margin-top: 22px; }
+    /* Upload sectie */
+    .upload-sectie {
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .upload-sectie:hover { border-color: #0a2540; background: #f8fafc; }
+    .upload-sectie input[type="file"] { display: none; }
+    .upload-icon { font-size: 2rem; margin-bottom: 8px; }
+    .upload-label { font-size: 14px; color: #666; cursor: pointer; display: block; }
+    .upload-label strong { color: #0a2540; }
+    #foto-preview {
+      display: none;
+      width: 100%;
+      max-height: 220px;
+      object-fit: contain;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
 
-        .productheader {
-            display: flex;
-            gap: 14px;
-            align-items: center;
-            background: #f5f7fa;
-            border-radius: 10px;
-            padding: 14px 16px;
-            margin-bottom: 12px;
-        }
-        #productfoto {
-            width: 72px;
-            height: 72px;
-            border-radius: 8px;
-            object-fit: cover;
-            flex-shrink: 0;
-            background: #ddd;
-        }
-        .productnaam { font-size: 15px; font-weight: 700; line-height: 1.4; color: #222; }
+    .btn-primair {
+      margin-top: 14px;
+      display: block;
+      width: 100%;
+      padding: 13px;
+      font-size: 16px;
+      background-color: #0a2540;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background-color 0.2s;
+      font-weight: 700;
+    }
+    .btn-primair:disabled { background-color: #aaa; cursor: not-allowed; }
+    .btn-primair:hover:not(:disabled) { background-color: #1565c0; }
 
-        .winkel-kaart {
-            background: #f5f7fa;
-            border-radius: 10px;
-            padding: 14px 18px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border: 2px solid transparent;
-        }
-        .winkel-kaart.goedkoopst { border-color: #2a9d2a; background: #f0faf0; }
-        .winkel-kaart.niet-gevonden { opacity: 0.45; }
-        .winkel-info { display: flex; align-items: center; gap: 10px; }
-        .winkel-naam { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-        .goedkoopst-label {
-            font-size: 11px; background: #2a9d2a; color: white;
-            padding: 2px 7px; border-radius: 4px; font-weight: 400;
-        }
-        .winkel-prijs { font-size: 22px; font-weight: 700; color: #c00; }
-        .niet-gevonden-tekst { font-size: 14px; color: #aaa; }
-        .winkel-link { display: inline-block; margin-top: 4px; font-size: 13px; color: #1565c0; text-decoration: none; }
-        .winkel-link:hover { text-decoration: underline; }
+    #laadindicator {
+      display: none;
+      margin-top: 16px;
+      color: #666;
+      font-style: italic;
+      text-align: center;
+      font-size: 14px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 15px; height: 15px;
+      border: 2px solid #ccc;
+      border-top-color: #0a2540;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-        #fout {
-            display: none;
-            margin-top: 14px;
-            padding: 12px 16px;
-            background: #fff0f0;
-            border: 1px solid #f5c0c0;
-            border-radius: 8px;
-            color: #c00;
-            font-size: 14px;
-        }
+    #resultaat { display: none; margin-top: 22px; }
+    .productheader {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      background: #f5f7fa;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    #productfoto {
+      width: 72px; height: 72px;
+      border-radius: 8px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #ddd;
+    }
+    .productnaam { font-size: 15px; font-weight: 700; line-height: 1.4; color: #222; }
+    .winkel-kaart {
+      background: #f5f7fa;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 2px solid transparent;
+    }
+    .winkel-kaart.goedkoopst { border-color: #2a9d2a; background: #f0faf0; }
+    .winkel-kaart.niet-gevonden { opacity: 0.45; }
+    .winkel-info { display: flex; align-items: center; gap: 10px; }
+    .winkel-naam { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+    .goedkoopst-label {
+      font-size: 11px; background: #2a9d2a; color: white;
+      padding: 2px 7px; border-radius: 4px; font-weight: 400;
+    }
+    .winkel-prijs { font-size: 22px; font-weight: 700; color: #c00; }
+    .niet-gevonden-tekst { font-size: 14px; color: #aaa; }
+    .winkel-link { display: inline-block; margin-top: 4px; font-size: 13px; color: #1565c0; text-decoration: none; }
+    .winkel-link:hover { text-decoration: underline; }
 
-        .steps {
-            display: flex; justify-content: center; gap: 32px;
-            padding: 70px 40px; flex-wrap: wrap; background: white;
-        }
-        .step { text-align: center; max-width: 220px; }
-        .step .icon { font-size: 2.8rem; margin-bottom: 16px; }
-        .step h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
-        .step p { font-size: 0.9rem; color: #666; line-height: 1.5; }
+    #fout {
+      display: none;
+      margin-top: 14px;
+      padding: 12px 16px;
+      background: #fff0f0;
+      border: 1px solid #f5c0c0;
+      border-radius: 8px;
+      color: #c00;
+      font-size: 14px;
+    }
 
-        .features { background: #f5f7fa; padding: 70px 40px; text-align: center; }
-        .features h2 { font-size: 1.9rem; font-weight: 800; margin-bottom: 48px; }
-        .feature-grid { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
-        .feature-card {
-            background: white; border-radius: 12px; padding: 28px 24px;
-            max-width: 240px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); text-align: left;
-        }
-        .feature-card .icon { font-size: 1.8rem; margin-bottom: 12px; }
-        .feature-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
-        .feature-card p { font-size: 0.88rem; color: #666; line-height: 1.5; }
+    .steps {
+      display: flex; justify-content: center; gap: 32px;
+      padding: 70px 40px; flex-wrap: wrap; background: white;
+    }
+    .step { text-align: center; max-width: 220px; }
+    .step .icon { font-size: 2.8rem; margin-bottom: 16px; }
+    .step h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 0.9rem; color: #666; line-height: 1.5; }
 
-        .partners { background: white; padding: 60px 40px; text-align: center; }
-        .partners h2 { font-size: 1.2rem; color: #999; font-weight: 500; margin-bottom: 32px; text-transform: uppercase; letter-spacing: 1px; }
-        .partner-logos { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; align-items: center; }
-        .partner-logos span { font-size: 1.4rem; font-weight: 800; color: #aaa; }
+    .features { background: #f5f7fa; padding: 70px 40px; text-align: center; }
+    .features h2 { font-size: 1.9rem; font-weight: 800; margin-bottom: 48px; }
+    .feature-grid { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+    .feature-card {
+      background: white; border-radius: 12px; padding: 28px 24px;
+      max-width: 240px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); text-align: left;
+    }
+    .feature-card .icon { font-size: 1.8rem; margin-bottom: 12px; }
+    .feature-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 0.88rem; color: #666; line-height: 1.5; }
 
-        footer { background: #0a2540; color: #888; text-align: center; padding: 28px 20px; font-size: 0.85rem; }
-        footer a { color: #4fc3f7; text-decoration: none; margin: 0 8px; }
-        footer a:hover { text-decoration: underline; }
-    </style>
+    .partners { background: white; padding: 60px 40px; text-align: center; }
+    .partners h2 { font-size: 1.2rem; color: #999; font-weight: 500; margin-bottom: 32px; text-transform: uppercase; letter-spacing: 1px; }
+    .partner-logos { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; align-items: center; }
+    .partner-logos span { font-size: 1.4rem; font-weight: 800; color: #aaa; }
+
+    footer { background: #0a2540; color: #888; text-align: center; padding: 28px 20px; font-size: 0.85rem; }
+    footer a { color: #4fc3f7; text-decoration: none; margin: 0 8px; }
+    footer a:hover { text-decoration: underline; }
+  </style>
 </head>
 <body>
 
-    <header>
-        <div class="logo">Compari<span>Scan</span></div>
-        <nav>
-            <a href="#hoe-werkt-het">Hoe werkt het?</a>
-            <a href="#functies">Functies</a>
-        </nav>
-    </header>
+<header>
+  <div class="logo">Compari<span>Scan</span></div>
+  <nav>
+    <a href="#hoe-werkt-het">Hoe werkt het?</a>
+    <a href="#functies">Functies</a>
+  </nav>
+</header>
 
-    <section class="tool-sectie">
-        <h1>Maak een foto,<br/>vergelijk de <span>beste prijs</span></h1>
-        <p>CompariScan herkent elk product via je camera en zoekt direct de laagste prijs bij Nederlandse webshops.</p>
+<section class="tool-sectie">
+  <h1>Maak een foto,<br/>vergelijk de <span>beste prijs</span></h1>
+  <p>CompariScan herkent elk product via je camera en zoekt direct de laagste prijs bij Nederlandse webshops.</p>
 
-        <div class="tool-box">
-            <div class="upload-sectie" onclick="document.getElementById('foto').click()">
-                <img id="foto-preview" src="" alt="Preview">
-                <label class="upload-label" id="upload-label">📂 Klik om een foto te kiezen</label>
-                <input type="file" id="foto" accept="image/*" capture="environment">
+  <div class="tool-box">
+
+    <div class="tab-switcher">
+      <button class="tab-btn actief" id="tab-camera" onclick="wisselTab('camera')">📷 Camera</button>
+      <button class="tab-btn" id="tab-upload" onclick="wisselTab('upload')">📂 Foto uploaden</button>
+    </div>
+
+    <!-- Camera paneel -->
+    <div id="paneel-camera">
+      <div class="camera-wrapper">
+        <div id="camera-placeholder">
+          <div class="cam-icon">📷</div>
+          <span>Klik op "Camera starten" om je camera te activeren</span>
+        </div>
+        <video id="camera-stream" autoplay playsinline style="display:none;"></video>
+        <div id="camera-overlay" style="display:none;">
+          <div class="camera-kader"></div>
+        </div>
+      </div>
+      <canvas id="canvas-hidden"></canvas>
+      <div class="camera-acties">
+        <button class="btn-secundair" id="btn-start-camera" onclick="startCamera()">▶ Camera starten</button>
+        <button class="btn-snapshot" id="btn-snapshot" onclick="maakSnapshot()" disabled>📸 Maak foto & vergelijk</button>
+      </div>
+    </div>
+
+    <!-- Upload paneel -->
+    <div id="paneel-upload" style="display:none;">
+      <div class="upload-sectie" onclick="document.getElementById('foto').click()">
+        <img id="foto-preview" src="" alt="Preview">
+        <div class="upload-icon">📂</div>
+        <label class="upload-label" id="upload-label"><strong>Klik om een foto te kiezen</strong><br>JPG, PNG, WEBP of GIF</label>
+        <input type="file" id="foto" accept="image/*">
+      </div>
+      <button class="btn-primair" id="knop-upload" onclick="herkenViaUpload()">🔍 Herken product & vergelijk prijzen</button>
+    </div>
+
+    <p id="laadindicator"><span class="spinner"></span>Product wordt herkend en prijzen worden opgezocht... (kan 15 seconden duren)</p>
+    <div id="fout"></div>
+
+    <div id="resultaat">
+      <div class="productheader">
+        <img id="productfoto" src="" alt="Productfoto">
+        <div class="productnaam" id="productnaam"></div>
+      </div>
+      <div id="winkel-lijst"></div>
+    </div>
+
+  </div>
+</section>
+
+<section class="steps" id="hoe-werkt-het">
+  <div class="step"><div class="icon">📷</div><h3>1. Maak een foto</h3><p>Richt je camera op een product — in de winkel, thuis of onderweg.</p></div>
+  <div class="step"><div class="icon">🤖</div><h3>2. Automatische herkenning</h3><p>Onze AI herkent het product en zoekt de exacte naam op.</p></div>
+  <div class="step"><div class="icon">💶</div><h3>3. Vergelijk prijzen</h3><p>Je ziet direct de prijzen bij populaire Nederlandse webshops naast elkaar.</p></div>
+  <div class="step"><div class="icon">🛒</div><h3>4. Koop voor de beste prijs</h3><p>Klik door naar de winkel met de laagste prijs en bestel direct.</p></div>
+</section>
+
+<section class="features" id="functies">
+  <h2>Waarom CompariScan?</h2>
+  <div class="feature-grid">
+    <div class="feature-card"><div class="icon">⚡</div><h4>Razendsnel</h4><p>Binnen enkele seconden zie je de prijzen van meerdere winkels.</p></div>
+    <div class="feature-card"><div class="icon">🇳🇱</div><h4>Nederlandse winkels</h4><p>We vergelijken prijzen bij bekende Nederlandse webshops zoals Bol.com en Coolblue.</p></div>
+    <div class="feature-card"><div class="icon">📱</div><h4>Werkt op elk apparaat</h4><p>Gebruik CompariScan op je telefoon, tablet of computer.</p></div>
+    <div class="feature-card"><div class="icon">🔒</div><h4>Geen account nodig</h4><p>Gewoon de site openen en een foto maken — klaar.</p></div>
+  </div>
+</section>
+
+<section class="partners">
+  <h2>Prijzen ophalen bij</h2>
+  <div class="partner-logos">
+    <span>bol.com</span>
+    <span>Coolblue</span>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 CompariScan
+    <a href="/privacy.html">Privacybeleid</a>
+    <a href="/voorwaarden.html">Algemene voorwaarden</a>
+  </p>
+</footer>
+
+<script>
+  let cameraStream = null;
+
+  // ── Tab wisselen ──────────────────────────────────────────────
+  function wisselTab(tab) {
+    document.getElementById('paneel-camera').style.display = tab === 'camera' ? 'block' : 'none';
+    document.getElementById('paneel-upload').style.display  = tab === 'upload'  ? 'block' : 'none';
+    document.getElementById('tab-camera').classList.toggle('actief', tab === 'camera');
+    document.getElementById('tab-upload').classList.toggle('actief', tab === 'upload');
+    resetResultaat();
+    if (tab === 'upload' && cameraStream) stopCamera();
+  }
+
+  // ── Camera ────────────────────────────────────────────────────
+  async function startCamera() {
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }
+      });
+      const video = document.getElementById('camera-stream');
+      video.srcObject = cameraStream;
+      video.style.display = 'block';
+      document.getElementById('camera-placeholder').style.display = 'none';
+      document.getElementById('camera-overlay').style.display = 'flex';
+      document.getElementById('btn-snapshot').disabled = false;
+      document.getElementById('btn-start-camera').textContent = '⏹ Stop camera';
+      document.getElementById('btn-start-camera').onclick = stopCamera;
+    } catch (err) {
+      toonFout('Camera kon niet worden gestart. Controleer of je toestemming hebt gegeven. (' + err.message + ')');
+    }
+  }
+
+  function stopCamera() {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+    }
+    const video = document.getElementById('camera-stream');
+    video.style.display = 'none';
+    video.srcObject = null;
+    document.getElementById('camera-placeholder').style.display = 'flex';
+    document.getElementById('camera-overlay').style.display = 'none';
+    document.getElementById('btn-snapshot').disabled = true;
+    document.getElementById('btn-start-camera').textContent = '▶ Camera starten';
+    document.getElementById('btn-start-camera').onclick = startCamera;
+  }
+
+  function maakSnapshot() {
+    const video  = document.getElementById('camera-stream');
+    const canvas = document.getElementById('canvas-hidden');
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.toBlob(blob => verstuurFoto(blob), 'image/jpeg', 0.92);
+  }
+
+  // ── Upload ────────────────────────────────────────────────────
+  document.getElementById('foto').addEventListener('change', function () {
+    const foto = this.files[0];
+    if (!foto) return;
+    const preview = document.getElementById('foto-preview');
+    preview.src = URL.createObjectURL(foto);
+    preview.style.display = 'block';
+    document.getElementById('upload-label').innerHTML = '<strong>' + foto.name + '</strong>';
+  });
+
+  function herkenViaUpload() {
+    const foto = document.getElementById('foto').files[0];
+    if (!foto) { alert('Kies eerst een foto!'); return; }
+    verstuurFoto(foto);
+  }
+
+  // ── Verstuur naar backend ─────────────────────────────────────
+  async function verstuurFoto(blob) {
+    setLaden(true);
+    resetResultaat();
+    const formData = new FormData();
+    formData.append('foto', blob, 'foto.jpg');
+    try {
+      const response = await fetch('/herken', { method: 'POST', body: formData });
+      if (!response.ok) throw new Error('Serverfout: ' + response.status);
+      const data = await response.json();
+      if (data.fout) throw new Error(data.fout);
+      toonResultaat(data, blob);
+    } catch (err) {
+      toonFout('Er ging iets mis: ' + err.message);
+    } finally {
+      setLaden(false);
+    }
+  }
+
+  // ── Resultaat tonen ───────────────────────────────────────────
+  function toonResultaat(data, origineleFoto) {
+    const bolResultaat = data.prijzen.find(w => w.afbeelding);
+    document.getElementById('productfoto').src = bolResultaat
+      ? bolResultaat.afbeelding
+      : URL.createObjectURL(origineleFoto);
+    document.getElementById('productnaam').textContent = data.productnaam;
+
+    const gevondenPrijzen = data.prijzen.filter(w => w.gevonden).map(w => w.prijs);
+    const goedkoopste = gevondenPrijzen.length > 0 ? Math.min(...gevondenPrijzen) : null;
+
+    const lijst = document.getElementById('winkel-lijst');
+    lijst.innerHTML = '';
+    data.prijzen.forEach(winkel => {
+      const isGoedkoopst = winkel.gevonden && winkel.prijs === goedkoopste;
+      const kaart = document.createElement('div');
+      if (!winkel.gevonden) {
+        kaart.className = 'winkel-kaart niet-gevonden';
+        kaart.innerHTML = `
+          <div class="winkel-info">
+            <span style="font-size:22px">${winkel.logo}</span>
+            <div class="winkel-naam">${winkel.winkel}</div>
+          </div>
+          <div class="niet-gevonden-tekst">Niet gevonden</div>`;
+      } else {
+        kaart.className = 'winkel-kaart' + (isGoedkoopst ? ' goedkoopst' : '');
+        kaart.innerHTML = `
+          <div class="winkel-info">
+            <span style="font-size:22px">${winkel.logo}</span>
+            <div>
+              <div class="winkel-naam">
+                ${winkel.winkel}
+                ${isGoedkoopst ? '<span class="goedkoopst-label">Goedkoopst</span>' : ''}
+              </div>
+              <a class="winkel-link" href="${winkel.link}" target="_blank">🛒 Bekijk aanbieding</a>
             </div>
+          </div>
+          <div class="winkel-prijs">€${winkel.prijs.toFixed(2).replace('.', ',')}</div>`;
+      }
+      lijst.appendChild(kaart);
+    });
+    document.getElementById('resultaat').style.display = 'block';
+  }
 
-            <button id="knop" onclick="herken()">🔍 Herken product & vergelijk prijzen</button>
+  // ── Helpers ───────────────────────────────────────────────────
+  function setLaden(actief) {
+    document.getElementById('laadindicator').style.display = actief ? 'block' : 'none';
+    document.getElementById('btn-snapshot').disabled = actief || !cameraStream;
+    const knopUpload = document.getElementById('knop-upload');
+    if (knopUpload) knopUpload.disabled = actief;
+  }
 
-            <p id="laadindicator"><span class="spinner"></span>Product wordt herkend en prijzen worden opgezocht... (kan 15 seconden duren)</p>
+  function resetResultaat() {
+    document.getElementById('resultaat').style.display = 'none';
+    document.getElementById('fout').style.display = 'none';
+  }
 
-            <div id="fout"></div>
-
-            <div id="resultaat">
-                <div class="productheader">
-                    <img id="productfoto" src="" alt="Productfoto">
-                    <div class="productnaam" id="productnaam"></div>
-                </div>
-                <div id="winkel-lijst"></div>
-            </div>
-        </div>
-    </section>
-
-    <section class="steps" id="hoe-werkt-het">
-        <div class="step"><div class="icon">📷</div><h3>1. Maak een foto</h3><p>Richt je camera op een product — in de winkel, thuis of onderweg.</p></div>
-        <div class="step"><div class="icon">🤖</div><h3>2. Automatische herkenning</h3><p>Onze AI herkent het product en zoekt de exacte naam op.</p></div>
-        <div class="step"><div class="icon">💶</div><h3>3. Vergelijk prijzen</h3><p>Je ziet direct de prijzen bij populaire Nederlandse webshops naast elkaar.</p></div>
-        <div class="step"><div class="icon">🛒</div><h3>4. Koop voor de beste prijs</h3><p>Klik door naar de winkel met de laagste prijs en bestel direct.</p></div>
-    </section>
-
-    <section class="features" id="functies">
-        <h2>Waarom CompariScan?</h2>
-        <div class="feature-grid">
-            <div class="feature-card"><div class="icon">⚡</div><h4>Razendsnel</h4><p>Binnen enkele seconden zie je de prijzen van meerdere winkels.</p></div>
-            <div class="feature-card"><div class="icon">🇳🇱</div><h4>Nederlandse winkels</h4><p>We vergelijken prijzen bij bekende Nederlandse webshops zoals Bol.com en Coolblue.</p></div>
-            <div class="feature-card"><div class="icon">📱</div><h4>Werkt op elk apparaat</h4><p>Gebruik CompariScan op je telefoon, tablet of computer.</p></div>
-            <div class="feature-card"><div class="icon">🔒</div><h4>Geen account nodig</h4><p>Gewoon de site openen en een foto maken — klaar.</p></div>
-        </div>
-    </section>
-
-    <section class="partners">
-        <h2>Prijzen ophalen bij</h2>
-        <div class="partner-logos">
-            <span>bol.com</span>
-            <span>Coolblue</span>
-        </div>
-    </section>
-
-    <footer>
-        <p>© 2026 CompariScan
-            <a href="/privacy.html">Privacybeleid</a>
-            <a href="/voorwaarden.html">Algemene voorwaarden</a>
-        </p>
-    </footer>
-
-    <script>
-        document.getElementById("foto").addEventListener("change", function () {
-            const foto = this.files[0];
-            if (!foto) return;
-            const preview = document.getElementById("foto-preview");
-            preview.src = URL.createObjectURL(foto);
-            preview.style.display = "block";
-            document.getElementById("upload-label").textContent = foto.name;
-        });
-
-        async function herken() {
-            const foto = document.getElementById("foto").files[0];
-            if (!foto) { alert("Kies eerst een foto!"); return; }
-
-            document.getElementById("knop").disabled = true;
-            document.getElementById("laadindicator").style.display = "block";
-            document.getElementById("resultaat").style.display = "none";
-            document.getElementById("fout").style.display = "none";
-
-            const formData = new FormData();
-            formData.append("foto", foto);
-
-            try {
-                const response = await fetch("/herken", {
-                    method: "POST",
-                    body: formData
-                });
-
-                if (!response.ok) throw new Error("Serverfout: " + response.status);
-                const data = await response.json();
-
-                const bolResultaat = data.prijzen.find(w => w.afbeelding);
-                document.getElementById("productfoto").src = bolResultaat
-                    ? bolResultaat.afbeelding
-                    : URL.createObjectURL(foto);
-                document.getElementById("productnaam").textContent = data.productnaam;
-
-                const gevondenPrijzen = data.prijzen.filter(w => w.gevonden).map(w => w.prijs);
-                const goedkoopste = gevondenPrijzen.length > 0 ? Math.min(...gevondenPrijzen) : null;
-
-                const lijst = document.getElementById("winkel-lijst");
-                lijst.innerHTML = "";
-
-                data.prijzen.forEach(winkel => {
-                    const isGoedkoopst = winkel.gevonden && winkel.prijs === goedkoopste;
-                    const kaart = document.createElement("div");
-
-                    if (!winkel.gevonden) {
-                        kaart.className = "winkel-kaart niet-gevonden";
-                        kaart.innerHTML = `
-                            <div class="winkel-info">
-                                <span style="font-size:22px">${winkel.logo}</span>
-                                <div class="winkel-naam">${winkel.winkel}</div>
-                            </div>
-                            <div class="niet-gevonden-tekst">Niet gevonden</div>`;
-                    } else {
-                        kaart.className = "winkel-kaart" + (isGoedkoopst ? " goedkoopst" : "");
-                        kaart.innerHTML = `
-                            <div class="winkel-info">
-                                <span style="font-size:22px">${winkel.logo}</span>
-                                <div>
-                                    <div class="winkel-naam">
-                                        ${winkel.winkel}
-                                        ${isGoedkoopst ? '<span class="goedkoopst-label">Goedkoopst</span>' : ""}
-                                    </div>
-                                    <a class="winkel-link" href="${winkel.link}" target="_blank">🛒 Bekijk aanbieding</a>
-                                </div>
-                            </div>
-                            <div class="winkel-prijs">€${winkel.prijs.toFixed(2).replace(".", ",")}</div>`;
-                    }
-                    lijst.appendChild(kaart);
-                });
-
-                document.getElementById("resultaat").style.display = "block";
-
-            } catch (err) {
-                const fout = document.getElementById("fout");
-                fout.textContent = "❌ Er ging iets mis: " + err.message;
-                fout.style.display = "block";
-            } finally {
-                document.getElementById("laadindicator").style.display = "none";
-                document.getElementById("knop").disabled = false;
-            }
-        }
-    </script>
+  function toonFout(tekst) {
+    const fout = document.getElementById('fout');
+    fout.textContent = '❌ ' + tekst;
+    fout.style.display = 'block';
+  }
+</script>
 
 </body>
 </html>

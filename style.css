@@ -342,6 +342,13 @@ h1, h2, h3, .logo {
 }
 .winkel-link:hover { text-decoration: underline; }
 
+.resultaat-noot {
+  font-size: 0.78rem;
+  color: #9aa9b8;
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
 /* ---------- Functies-strook ---------- */
 .functies {
   max-width: 1000px;

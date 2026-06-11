@@ -319,6 +319,19 @@ h1, h2, h3, .logo {
 .winkel-prijs { font-size: 1.3rem; font-weight: 700; color: var(--inkt); font-family: "Space Grotesk", sans-serif; }
 .winkel-kaart.goedkoopst .winkel-prijs { color: var(--groen); }
 .niet-gevonden-tekst { font-size: 0.85rem; color: #9aa9b8; }
+.prijs-knop {
+  display: inline-block;
+  padding: 9px 16px;
+  background: var(--inkt);
+  color: var(--wit);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+.prijs-knop:hover { background: #14529b; }
 .winkel-link {
   display: inline-block;
   margin-top: 3px;

@@ -1,19 +1,24 @@
 import anthropic
 import base64
+import io
 import os
 import time
 import requests
 from bs4 import BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from urllib.parse import quote
 from collections import defaultdict
+from PIL import Image, UnidentifiedImageError
 
 API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+BOL_SITE_ID = os.environ.get("BOL_SITE_ID")  # optioneel: Bol.com partner site-id
 
 client = anthropic.Anthropic(api_key=API_KEY)
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024  # max 15 MB upload
 CORS(app)
 
 HEADERS = {
@@ -22,35 +27,78 @@ HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
 
+# ----------------------------------------------------------------------
 # Rate limiting: max 5 verzoeken per IP per minuut
+# ----------------------------------------------------------------------
 RATE_LIMIT = 5
 RATE_WINDOW = 60  # seconden
 ip_requests = defaultdict(list)
+_laatste_opschoning = time.time()
+
+
+def schoon_rate_limiter_op(nu):
+    """Verwijder IP's zonder recente verzoeken, zodat het geheugen niet blijft groeien."""
+    global _laatste_opschoning
+    if nu - _laatste_opschoning < 300:  # max eens per 5 minuten
+        return
+    _laatste_opschoning = nu
+    dode_ips = [ip for ip, tijden in ip_requests.items()
+                if not tijden or nu - tijden[-1] > RATE_WINDOW]
+    for ip in dode_ips:
+        del ip_requests[ip]
 
 
 def check_rate_limit(ip):
     nu = time.time()
-    verzoeken = ip_requests[ip]
-    # Verwijder verzoeken ouder dan het tijdvenster
-    ip_requests[ip] = [t for t in verzoeken if nu - t < RATE_WINDOW]
+    schoon_rate_limiter_op(nu)
+    ip_requests[ip] = [t for t in ip_requests[ip] if nu - t < RATE_WINDOW]
     if len(ip_requests[ip]) >= RATE_LIMIT:
-        wacht = int(RATE_WINDOW - (nu - ip_requests[ip][0]))
+        wacht = int(RATE_WINDOW - (nu - ip_requests[ip][0])) + 1
         return False, wacht
     ip_requests[ip].append(nu)
     return True, 0
 
 
-def detecteer_media_type(data_bytes):
-    if data_bytes[:4] == b'\x89PNG':
-        return "image/png"
-    elif data_bytes[:3] == b'GIF':
-        return "image/gif"
-    elif data_bytes[:4] == b'RIFF' and data_bytes[8:12] == b'WEBP':
-        return "image/webp"
-    else:
-        return "image/jpeg"
+# ----------------------------------------------------------------------
+# Afbeelding verwerken
+# ----------------------------------------------------------------------
+MAX_ZIJDE = 1568  # px — groter levert geen betere herkenning op, wel hogere kosten
 
 
+def verwerk_afbeelding(data_bytes):
+    """Valideer dat het bestand een afbeelding is en verklein/hercodeer naar JPEG.
+
+    Retourneert (base64_string, media_type) of gooit ValueError.
+    Door alles naar JPEG om te zetten blijven we altijd ruim onder de
+    5 MB-limiet van de Anthropic API, ook bij grote telefoonfoto's.
+    """
+    try:
+        img = Image.open(io.BytesIO(data_bytes))
+        img.load()
+    except (UnidentifiedImageError, OSError):
+        raise ValueError("Het bestand is geen geldige afbeelding (JPG, PNG, GIF of WEBP).")
+
+    # EXIF-rotatie van telefoonfoto's respecteren
+    try:
+        from PIL import ImageOps
+        img = ImageOps.exif_transpose(img)
+    except Exception:
+        pass
+
+    if img.mode not in ("RGB", "L"):
+        img = img.convert("RGB")
+
+    if max(img.size) > MAX_ZIJDE:
+        img.thumbnail((MAX_ZIJDE, MAX_ZIJDE))
+
+    buffer = io.BytesIO()
+    img.save(buffer, format="JPEG", quality=85)
+    return base64.standard_b64encode(buffer.getvalue()).decode("utf-8"), "image/jpeg"
+
+
+# ----------------------------------------------------------------------
+# Productherkenning via Claude
+# ----------------------------------------------------------------------
 def herken_product(image_data, media_type):
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
@@ -68,14 +116,33 @@ def herken_product(image_data, media_type):
                 },
                 {
                     "type": "text",
-                    "text": "Wat is dit voor product? Geef alleen de merknaam en productnaam, zo kort en specifiek mogelijk. Maximaal 4 woorden. Geen beschrijving, geen extra tekst. Bijvoorbeeld: 'Dobble' of 'LEGO Technic 42120' of 'Samsung QE55Q80C'."
+                    "text": (
+                        "Wat is dit voor product? Geef alleen de merknaam en productnaam, "
+                        "zo kort en specifiek mogelijk. Maximaal 4 woorden. Geen beschrijving, "
+                        "geen extra tekst. Bijvoorbeeld: 'Dobble' of 'LEGO Technic 42120' of "
+                        "'Samsung QE55Q80C'. Als er geen duidelijk product op de foto staat, "
+                        "antwoord dan exact: ONBEKEND"
+                    )
                 }
             ],
         }]
     )
     naam = response.content[0].text.strip()
     naam = naam.split("\n")[0].split(".")[0].strip()
+    if not naam or naam.upper() == "ONBEKEND" or len(naam) > 80:
+        return None
     return naam
+
+
+# ----------------------------------------------------------------------
+# Prijzen scrapen
+# ----------------------------------------------------------------------
+def maak_bol_link(url):
+    """Zet een Bol.com-link om naar een affiliate-link als BOL_SITE_ID is ingesteld."""
+    if BOL_SITE_ID:
+        return (f"https://partner.bol.com/click/click?p=1&t=url&s={BOL_SITE_ID}"
+                f"&url={quote(url, safe='')}&f=TXL")
+    return url
 
 
 def scrape_bol(productnaam):
@@ -95,10 +162,11 @@ def scrape_bol(productnaam):
         prijs_tekst = prijs_el.get_text(strip=True).replace(",", ".").replace("*", "")
         prijs = float(''.join(c for c in prijs_tekst if c.isdigit() or c == '.'))
         link_el = product.select_one("a[data-test='product-title']") or product.select_one("a")
-        link = "https://www.bol.com" + link_el["href"] if link_el else url
+        link = "https://www.bol.com" + link_el["href"] if link_el and link_el.get("href") else url
         afbeelding_el = product.select_one("img")
         afbeelding = afbeelding_el["src"] if afbeelding_el and afbeelding_el.get("src") else None
-        return {"gevonden": True, "naam": naam, "prijs": prijs, "link": link, "afbeelding": afbeelding}
+        return {"gevonden": True, "naam": naam, "prijs": prijs,
+                "link": maak_bol_link(link), "afbeelding": afbeelding}
     except Exception as e:
         print(f"Bol.com scrape fout: {e}")
         return {"gevonden": False}
@@ -121,7 +189,8 @@ def scrape_coolblue(productnaam):
         prijs_tekst = prijs_el.get_text(strip=True).replace(",", ".").replace("€", "").strip()
         prijs = float(''.join(c for c in prijs_tekst if c.isdigit() or c == '.'))
         link_el = product.select_one("a")
-        link = "https://www.coolblue.nl" + link_el["href"] if link_el and link_el.get("href", "").startswith("/") else url
+        link = ("https://www.coolblue.nl" + link_el["href"]
+                if link_el and link_el.get("href", "").startswith("/") else url)
         return {"gevonden": True, "naam": naam, "prijs": prijs, "link": link}
     except Exception as e:
         print(f"Coolblue scrape fout: {e}")
@@ -129,9 +198,14 @@ def scrape_coolblue(productnaam):
 
 
 def haal_prijzen(productnaam):
-    bol = scrape_bol(productnaam)
-    coolblue = scrape_coolblue(productnaam)
     zoekterm = quote(productnaam)
+    # Beide winkels tegelijk scrapen — halveert de wachttijd voor de gebruiker
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        bol_future = pool.submit(scrape_bol, productnaam)
+        coolblue_future = pool.submit(scrape_coolblue, productnaam)
+        bol = bol_future.result()
+        coolblue = coolblue_future.result()
+
     return [
         {
             "winkel": "Bol.com",
@@ -139,7 +213,7 @@ def haal_prijzen(productnaam):
             "gevonden": bol["gevonden"],
             "naam": bol.get("naam", productnaam),
             "prijs": bol.get("prijs"),
-            "link": bol.get("link", f"https://www.bol.com/nl/nl/s/?searchtext={zoekterm}"),
+            "link": bol.get("link", maak_bol_link(f"https://www.bol.com/nl/nl/s/?searchtext={zoekterm}")),
             "afbeelding": bol.get("afbeelding"),
         },
         {
@@ -154,17 +228,27 @@ def haal_prijzen(productnaam):
     ]
 
 
+# ----------------------------------------------------------------------
+# Routes
+# ----------------------------------------------------------------------
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
+
 
 @app.route("/privacy.html")
 def privacy():
     return send_from_directory(".", "privacy.html")
 
+
 @app.route("/voorwaarden.html")
 def voorwaarden():
     return send_from_directory(".", "voorwaarden.html")
+
+
+@app.errorhandler(413)
+def bestand_te_groot(e):
+    return jsonify({"fout": "De foto is te groot (maximaal 15 MB)."}), 413
 
 
 @app.route("/herken", methods=["POST"])
@@ -179,14 +263,27 @@ def herken():
     bestand = request.files["foto"]
     if bestand.filename == "":
         return jsonify({"fout": "Leeg bestand"}), 400
+
     data_bytes = bestand.read()
     if len(data_bytes) == 0:
         return jsonify({"fout": "Bestand is leeg"}), 400
 
-    media_type = detecteer_media_type(data_bytes)
-    image_data = base64.standard_b64encode(data_bytes).decode("utf-8")
-    productnaam = herken_product(image_data, media_type)
+    try:
+        image_data, media_type = verwerk_afbeelding(data_bytes)
+    except ValueError as e:
+        return jsonify({"fout": str(e)}), 400
+
+    try:
+        productnaam = herken_product(image_data, media_type)
+    except anthropic.APIError as e:
+        print(f"Anthropic API fout: {e}")
+        return jsonify({"fout": "De productherkenning is tijdelijk niet beschikbaar. Probeer het zo opnieuw."}), 502
+
+    if not productnaam:
+        return jsonify({"fout": "Er is geen product herkend op deze foto. Probeer een duidelijkere foto van het product of de verpakking."}), 422
+
     prijzen = haal_prijzen(productnaam)
+
     return jsonify({
         "productnaam": productnaam,
         "prijzen": prijzen

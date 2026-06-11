@@ -359,7 +359,7 @@ def barcode():
             productnaam = naam
             prijzen = haal_prijzen(naam)
         else:
-            return jsonify({"fout": "Geen product gevonden voor deze barcode. Mogelijk wordt dit product niet verkocht bij Bol.com of Coolblue."}), 422
+            return jsonify({"fout": "Geen product gevonden voor deze barcode. Mogelijk wordt dit product niet verkocht bij de aangesloten webshops."}), 422
 
     return jsonify({"productnaam": productnaam or ean, "prijzen": prijzen})
 

@@ -97,10 +97,15 @@ def verwerk_afbeelding(data_bytes):
 # ----------------------------------------------------------------------
 # Productherkenning via Claude
 # ----------------------------------------------------------------------
+CATEGORIEEN = {"elektronica", "huishouden", "verzorging", "supermarkt",
+               "speelgoed", "boeken", "kleding", "wonen", "sport", "overig"}
+
+
 def herken_product(image_data, media_type):
+    """Herken het product op de foto. Retourneert (productnaam, categorie) of (None, None)."""
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=50,
+        max_tokens=60,
         messages=[{
             "role": "user",
             "content": [
@@ -115,21 +120,29 @@ def herken_product(image_data, media_type):
                 {
                     "type": "text",
                     "text": (
-                        "Wat is dit voor product? Geef alleen de merknaam en productnaam, "
-                        "zo kort en specifiek mogelijk. Maximaal 4 woorden. Geen beschrijving, "
-                        "geen extra tekst. Bijvoorbeeld: 'Dobble' of 'LEGO Technic 42120' of "
-                        "'Samsung QE55Q80C'. Als er geen duidelijk product op de foto staat, "
-                        "antwoord dan exact: ONBEKEND"
+                        "Wat is dit voor product? Antwoord met exact twee regels.\n"
+                        "Regel 1: alleen de merknaam en productnaam, zo kort en specifiek "
+                        "mogelijk, maximaal 4 woorden. Bijvoorbeeld: 'Dobble' of "
+                        "'LEGO Technic 42120' of 'Samsung QE55Q80C'.\n"
+                        "Regel 2: exact één categorie uit deze lijst: elektronica, huishouden, "
+                        "verzorging, supermarkt, speelgoed, boeken, kleding, wonen, sport, overig.\n"
+                        "Als er geen duidelijk product op de foto staat, antwoord dan exact: ONBEKEND"
                     )
                 }
             ],
         }]
     )
-    naam = response.content[0].text.strip()
-    naam = naam.split("\n")[0].split(".")[0].strip()
-    if not naam or naam.upper() == "ONBEKEND" or len(naam) > 80:
-        return None
-    return naam
+    tekst = response.content[0].text.strip()
+    if tekst.upper().startswith("ONBEKEND"):
+        return None, None
+    regels = [r.strip() for r in tekst.split("\n") if r.strip()]
+    naam = regels[0].split(".")[0].strip() if regels else ""
+    categorie = regels[1].lower().strip() if len(regels) > 1 else "overig"
+    if categorie not in CATEGORIEEN:
+        categorie = "overig"
+    if not naam or len(naam) > 80:
+        return None, None
+    return naam, categorie
 
 
 # ----------------------------------------------------------------------
@@ -150,25 +163,41 @@ def maak_bol_link(url):
     return url
 
 
-def haal_prijzen(zoekterm):
-    """Bouw per winkel een resultaat. prijs=None betekent: toon een linkknop."""
+# Winkels met hun zoek-URL en de categorieën die ze voeren.
+# categorieen=None betekent: verkoopt vrijwel alles, altijd tonen.
+WINKELS = [
+    {"naam": "Bol.com",    "url": "https://www.bol.com/nl/nl/s/?searchtext={q}",        "categorieen": None, "bol": True},
+    {"naam": "Amazon.nl",  "url": "https://www.amazon.nl/s?k={q}",                      "categorieen": None},
+    {"naam": "Coolblue",   "url": "https://www.coolblue.nl/zoeken?query={q}",           "categorieen": {"elektronica", "huishouden"}},
+    {"naam": "MediaMarkt", "url": "https://www.mediamarkt.nl/nl/search.html?query={q}", "categorieen": {"elektronica"}},
+    {"naam": "Kruidvat",   "url": "https://www.kruidvat.nl/search?text={q}",            "categorieen": {"verzorging", "supermarkt"}},
+    {"naam": "Intertoys",  "url": "https://www.intertoys.nl/search?q={q}",              "categorieen": {"speelgoed"}},
+    {"naam": "Wehkamp",    "url": "https://www.wehkamp.nl/zoeken/?zoekterm={q}",        "categorieen": {"kleding", "wonen", "sport", "speelgoed"}},
+    {"naam": "Decathlon",  "url": "https://www.decathlon.nl/search?Ntt={q}",            "categorieen": {"sport"}},
+]
+MAX_WINKELS = 5
+
+
+def haal_prijzen(zoekterm, categorie="overig"):
+    """Bouw per relevante winkel een resultaat. prijs=None betekent: toon een linkknop."""
     z = quote(zoekterm)
-    return [
-        {
-            "winkel": "Bol.com",
+    resultaten = []
+    for w in WINKELS:
+        if w["categorieen"] is not None and categorie not in w["categorieen"]:
+            continue
+        link = w["url"].format(q=z)
+        if w.get("bol"):
+            link = maak_bol_link(link)
+        resultaten.append({
+            "winkel": w["naam"],
             "gevonden": True,
             "prijs": None,
-            "link": maak_bol_link(f"https://www.bol.com/nl/nl/s/?searchtext={z}"),
+            "link": link,
             "afbeelding": None,
-        },
-        {
-            "winkel": "Coolblue",
-            "gevonden": True,
-            "prijs": None,
-            "link": f"https://www.coolblue.nl/zoeken?query={z}",
-            "afbeelding": None,
-        },
-    ]
+        })
+        if len(resultaten) >= MAX_WINKELS:
+            break
+    return resultaten
 
 
 # ----------------------------------------------------------------------
@@ -241,7 +270,7 @@ def herken():
         return jsonify({"fout": str(e)}), 400
 
     try:
-        productnaam = herken_product(image_data, media_type)
+        productnaam, categorie = herken_product(image_data, media_type)
     except anthropic.APIError as e:
         print(f"Anthropic API fout: {e}")
         return jsonify({"fout": "De productherkenning is tijdelijk niet beschikbaar. Probeer het zo opnieuw."}), 502
@@ -249,22 +278,21 @@ def herken():
     if not productnaam:
         return jsonify({"fout": "Er is geen product herkend op deze foto. Probeer een duidelijkere foto van het product of de verpakking."}), 422
 
-    prijzen = haal_prijzen(productnaam)
-
     return jsonify({
         "productnaam": productnaam,
-        "prijzen": prijzen
+        "prijzen": haal_prijzen(productnaam, categorie)
     })
 
 
 def zoek_naam_via_ean(ean):
     """Productnaam opzoeken via Open Food Facts / Open Products Facts.
-    Gratis en legitiem; dekt vooral supermarkt- en drogisterijproducten."""
+    Retourneert (naam, categorie). Een treffer in Open Food Facts betekent
+    vrijwel altijd een supermarkt- of drogisterijproduct."""
     bronnen = [
-        f"https://world.openfoodfacts.org/api/v2/product/{ean}.json",
-        f"https://world.openproductsfacts.org/api/v2/product/{ean}.json",
+        (f"https://world.openfoodfacts.org/api/v2/product/{ean}.json", "supermarkt"),
+        (f"https://world.openproductsfacts.org/api/v2/product/{ean}.json", "overig"),
     ]
-    for url in bronnen:
+    for url, categorie in bronnen:
         try:
             resp = requests.get(url, timeout=5, headers={"User-Agent": "CompariScan/1.0 (compariscan.nl)"})
             data = resp.json()
@@ -273,10 +301,10 @@ def zoek_naam_via_ean(ean):
             merk = (product.get("brands") or "").split(",")[0].strip()
             if naam:
                 volledig = f"{merk} {naam}".strip() if merk and merk.lower() not in naam.lower() else naam
-                return volledig[:80]
+                return volledig[:80], categorie
         except Exception as e:
             print(f"EAN-database fout ({url}): {e}")
-    return None
+    return None, None
 
 
 @app.route("/barcode", methods=["POST"])
@@ -291,11 +319,12 @@ def barcode():
     if not valideer_ean(ean):
         return jsonify({"fout": "Ongeldige barcode. Controleer de cijfers en probeer het opnieuw."}), 400
 
-    naam = zoek_naam_via_ean(ean)
+    naam, categorie = zoek_naam_via_ean(ean)
     zoekterm = naam if naam else ean
     productnaam = naam if naam else f"Barcode {ean}"
 
-    return jsonify({"productnaam": productnaam, "prijzen": haal_prijzen(zoekterm)})
+    return jsonify({"productnaam": productnaam,
+                    "prijzen": haal_prijzen(zoekterm, categorie or "overig")})
 
 
 if __name__ == "__main__":

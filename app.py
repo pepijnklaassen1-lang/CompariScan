@@ -259,6 +259,16 @@ def voorwaarden():
     return send_from_directory(".", "voorwaarden.html")
 
 
+@app.route("/style.css")
+def stylesheet():
+    return send_from_directory(".", "style.css")
+
+
+@app.route("/app.js")
+def scripts():
+    return send_from_directory(".", "app.js")
+
+
 @app.errorhandler(413)
 def bestand_te_groot(e):
     return jsonify({"fout": "De foto is te groot (maximaal 15 MB)."}), 413

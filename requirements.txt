@@ -2,6 +2,5 @@ flask
 flask-cors
 anthropic
 requests
-beautifulsoup4
 pillow
 gunicorn

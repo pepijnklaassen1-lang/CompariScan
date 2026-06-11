@@ -280,19 +280,30 @@ function maakWinkelKaart(winkel, isGoedkoopst) {
         naam.appendChild(label);
     }
     tekstBlok.appendChild(naam);
-    const link = document.createElement("a");
-    link.className = "winkel-link";
-    link.href = winkel.link;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer sponsored";
-    link.textContent = "Bekijk aanbieding";
-    tekstBlok.appendChild(link);
     kaart.appendChild(tekstBlok);
 
-    const prijs = document.createElement("div");
-    prijs.className = "winkel-prijs";
-    prijs.textContent = "€" + winkel.prijs.toFixed(2).replace(".", ",");
-    kaart.appendChild(prijs);
+    const heeftPrijs = typeof winkel.prijs === "number";
+    if (heeftPrijs) {
+        const link = document.createElement("a");
+        link.className = "winkel-link";
+        link.href = winkel.link;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer sponsored";
+        link.textContent = "Bekijk aanbieding";
+        tekstBlok.appendChild(link);
+        const prijs = document.createElement("div");
+        prijs.className = "winkel-prijs";
+        prijs.textContent = "\u20ac" + winkel.prijs.toFixed(2).replace(".", ",");
+        kaart.appendChild(prijs);
+    } else {
+        const knop = document.createElement("a");
+        knop.className = "prijs-knop";
+        knop.href = winkel.link;
+        knop.target = "_blank";
+        knop.rel = "noopener noreferrer sponsored";
+        knop.textContent = "Bekijk actuele prijs";
+        kaart.appendChild(knop);
+    }
     return kaart;
 }
 
@@ -304,12 +315,12 @@ function toonResultaat(data, fotoFallback) {
     else productfoto.removeAttribute("src");
     document.getElementById("productnaam").textContent = data.productnaam;
 
-    const gevondenPrijzen = data.prijzen.filter(w => w.gevonden).map(w => w.prijs);
+    const gevondenPrijzen = data.prijzen.filter(w => typeof w.prijs === "number").map(w => w.prijs);
     const goedkoopste = gevondenPrijzen.length > 0 ? Math.min(...gevondenPrijzen) : null;
     const lijst = document.getElementById("winkel-lijst");
     lijst.innerHTML = "";
     data.prijzen.forEach(winkel => {
-        lijst.appendChild(maakWinkelKaart(winkel, winkel.gevonden && winkel.prijs === goedkoopste));
+        lijst.appendChild(maakWinkelKaart(winkel, typeof winkel.prijs === "number" && winkel.prijs === goedkoopste));
     });
     document.getElementById("resultaat").style.display = "block";
 }

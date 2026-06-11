@@ -1,5 +1,5 @@
 /* ============================================================
-   CompariScan — gedeelde stylesheet
+   CompariScan, gedeelde stylesheet
    Kleuren: navy inkt + scan-cyaan (huisstijl), papierwit canvas
    Type: Space Grotesk (koppen) + Inter (tekst)
    ============================================================ */
@@ -55,22 +55,6 @@ h1, h2, h3, .logo {
   align-items: center;
   gap: 10px;
 }
-.logo span { color: var(--cyaan); }
-/* Barcode-glyph naast het logo, puur in CSS */
-.logo::before {
-  content: "";
-  width: 22px;
-  height: 18px;
-  background: repeating-linear-gradient(
-    90deg,
-    var(--cyaan) 0 2px, transparent 2px 5px,
-    var(--cyaan) 5px 8px, transparent 8px 10px,
-    var(--cyaan) 10px 11px, transparent 11px 15px,
-    var(--cyaan) 15px 18px, transparent 18px 20px,
-    var(--cyaan) 20px 22px
-  );
-  border-radius: 2px;
-}
 .site-header nav a {
   color: #b9c7d6;
   text-decoration: none;
@@ -82,15 +66,20 @@ h1, h2, h3, .logo {
 /* ---------- Hero + tool ---------- */
 .hero {
   position: relative;
-  background:
-    /* subtiele barcode-textuur over de gradient */
-    repeating-linear-gradient(90deg,
-      rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 14px,
-      rgba(255, 255, 255, 0.035) 14px 17px, transparent 17px 38px),
-    linear-gradient(160deg, var(--inkt-diep) 0%, var(--inkt) 55%, #11406e 100%);
+  background: linear-gradient(120deg, var(--inkt-diep), var(--inkt), #14529b, #0d3a66, var(--inkt-diep));
+  background-size: 300% 300%;
+  animation: gradientverloop 16s ease infinite;
   color: var(--wit);
   text-align: center;
   padding: 64px 20px 80px;
+}
+@keyframes gradientverloop {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero { animation: none; }
 }
 .hero h1 {
   font-size: clamp(2rem, 5vw, 2.8rem);
@@ -119,27 +108,6 @@ h1, h2, h3, .logo {
   color: var(--tekst);
   box-shadow: var(--schaduw);
   text-align: left;
-}
-/* Signatuur: scanlijn die over de kaart loopt tijdens het zoeken */
-.tool-kaart::after {
-  content: "";
-  position: absolute;
-  left: 0; right: 0; top: -3px;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--cyaan), transparent);
-  opacity: 0;
-}
-.tool-kaart.scant::after {
-  opacity: 1;
-  animation: scanlijn 1.6s ease-in-out infinite;
-}
-@keyframes scanlijn {
-  0%   { top: 0; }
-  50%  { top: calc(100% - 3px); }
-  100% { top: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .tool-kaart.scant::after { animation: none; top: 0; opacity: 0.6; }
 }
 
 /* Tabs */

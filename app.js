@@ -237,14 +237,12 @@ async function herken(foto) {
 
 // ==================== Gedeelde weergave ====================
 function toonLaden(tekst) {
-    document.querySelector(".tool-kaart").classList.add("scant");
     document.getElementById("laadtekst").textContent = tekst;
     document.getElementById("laadindicator").style.display = "block";
     document.getElementById("resultaat").style.display = "none";
     verbergFout();
 }
 function verbergLaden() {
-    document.querySelector(".tool-kaart").classList.remove("scant");
     document.getElementById("laadindicator").style.display = "none";
 }
 function toonFout(tekst) {

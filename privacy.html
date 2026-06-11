@@ -1,54 +1,45 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacybeleid — CompariScan</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #222; }
-    header { background: #0a2540; color: white; padding: 20px 40px; }
-    header a { font-size: 1.5rem; font-weight: 700; text-decoration: none; color: white; }
-    header a span { color: #4fc3f7; }
-    .content { max-width: 760px; margin: 60px auto; padding: 0 24px 80px; }
-    h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
-    .datum { color: #999; font-size: 0.9rem; margin-bottom: 40px; }
-    h2 { font-size: 1.1rem; font-weight: 700; margin: 32px 0 10px; }
-    p { font-size: 0.95rem; line-height: 1.7; color: #444; margin-bottom: 12px; }
-    ul { padding-left: 20px; margin-bottom: 12px; }
-    ul li { font-size: 0.95rem; line-height: 1.7; color: #444; margin-bottom: 4px; }
-    footer { background: #0a2540; color: #888; text-align: center; padding: 28px 20px; font-size: 0.85rem; }
-    footer a { color: #4fc3f7; text-decoration: none; margin: 0 8px; }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <header>
-    <a href="/">Compari<span>Scan</span></a>
+  <header class="site-header">
+    <a class="logo" href="/">Compari<span>Scan</span></a>
   </header>
-  <div class="content">
+  <main class="legal">
     <h1>Privacybeleid</h1>
     <p class="datum">Laatst bijgewerkt: juni 2026</p>
 
     <h2>1. Wie zijn wij?</h2>
-    <p>CompariScan is een prijsvergelijkingsservice waarmee gebruikers via een foto een product kunnen herkennen en de prijs kunnen vergelijken bij Nederlandse webshops.</p>
+    <p>CompariScan is een prijsvergelijkingsservice waarmee gebruikers via een foto of barcode een product kunnen herkennen en de prijs kunnen vergelijken bij Nederlandse webshops.</p>
 
     <h2>2. Welke gegevens verzamelen wij?</h2>
     <p>CompariScan verzamelt zo min mogelijk persoonsgegevens. Wij verwerken de volgende gegevens:</p>
     <ul>
       <li>Foto's die je uploadt voor productherkenning — deze worden niet opgeslagen na verwerking</li>
+      <li>Barcodes die je scant of invoert — deze worden niet aan jou als persoon gekoppeld</li>
       <li>Technische gegevens zoals IP-adres en browsertype via standaard serverlogboeken; je IP-adres wordt daarnaast kortstondig (maximaal één minuut) in het geheugen bewaard om misbruik van de dienst tegen te gaan</li>
     </ul>
 
     <h2>3. Waarvoor gebruiken wij je gegevens?</h2>
-    <p>De geüploade foto wordt uitsluitend gebruikt om het product te herkennen en een prijsvergelijking te tonen. De foto wordt niet opgeslagen, gedeeld of gebruikt voor andere doeleinden.</p>
+    <p>De geüploade foto of gescande barcode wordt uitsluitend gebruikt om het product te herkennen en een prijsvergelijking te tonen. De foto wordt niet opgeslagen, gedeeld of gebruikt voor andere doeleinden.</p>
 
     <h2>4. Delen wij gegevens met derden?</h2>
     <p>CompariScan maakt gebruik van de volgende externe diensten:</p>
     <ul>
       <li><strong>Anthropic (Claude AI)</strong> — voor productherkenning via de foto. De foto wordt hiervoor tijdelijk naar Anthropic verzonden.</li>
+      <li><strong>Open Food Facts / Open Products Facts</strong> — om bij een gescande barcode de productnaam op te zoeken. Hierbij wordt alleen de barcode verzonden, geen persoonsgegevens.</li>
       <li><strong>Bol.com</strong> — als affiliate partner voor prijsdata. Als je via een link op CompariScan iets koopt bij Bol.com, kunnen wij hiervoor een commissie ontvangen. Dit heeft geen invloed op de prijs die jij betaalt.</li>
       <li><strong>Coolblue</strong> — voor prijsdata.</li>
       <li><strong>Render</strong> — voor de hosting van deze website.</li>
+      <li><strong>Google Fonts</strong> — voor de lettertypen op deze website. Hierbij wordt je IP-adres gedeeld met Google.</li>
     </ul>
     <p>Wij verkopen geen persoonsgegevens aan derden.</p>
 
@@ -63,8 +54,8 @@
 
     <h2>8. Wijzigingen</h2>
     <p>Dit privacybeleid kan worden aangepast. De meest actuele versie is altijd te vinden op deze pagina.</p>
-  </div>
-  <footer>
+  </main>
+  <footer class="site-footer">
     <p>© 2026 CompariScan
       <a href="/privacy.html">Privacybeleid</a>
       <a href="/voorwaarden.html">Algemene voorwaarden</a>

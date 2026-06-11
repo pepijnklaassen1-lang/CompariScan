@@ -1,0 +1,434 @@
+/* ============================================================
+   CompariScan — gedeelde stylesheet
+   Kleuren: navy inkt + scan-cyaan (huisstijl), papierwit canvas
+   Type: Space Grotesk (koppen) + Inter (tekst)
+   ============================================================ */
+
+:root {
+  --inkt: #0a2540;
+  --inkt-diep: #071a30;
+  --cyaan: #4fc3f7;
+  --cyaan-fel: #7fd8ff;
+  --papier: #f6f8fb;
+  --wit: #ffffff;
+  --groen: #1e8e3e;
+  --groen-licht: #ecf7ee;
+  --lijn: #e3e9f0;
+  --tekst: #1c2b3a;
+  --tekst-zacht: #5a6b7c;
+  --fout-bg: #fdf1f1;
+  --fout-rand: #f0c8c8;
+  --fout-tekst: #a33;
+  --radius: 14px;
+  --schaduw: 0 10px 40px rgba(10, 37, 64, 0.12);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  background: var(--papier);
+  color: var(--tekst);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .logo {
+  font-family: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* ---------- Header ---------- */
+.site-header {
+  background: var(--inkt);
+  color: var(--wit);
+  padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--wit);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo span { color: var(--cyaan); }
+/* Barcode-glyph naast het logo, puur in CSS */
+.logo::before {
+  content: "";
+  width: 22px;
+  height: 18px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--cyaan) 0 2px, transparent 2px 5px,
+    var(--cyaan) 5px 8px, transparent 8px 10px,
+    var(--cyaan) 10px 11px, transparent 11px 15px,
+    var(--cyaan) 15px 18px, transparent 18px 20px,
+    var(--cyaan) 20px 22px
+  );
+  border-radius: 2px;
+}
+.site-header nav a {
+  color: #b9c7d6;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.site-header nav a:hover { color: var(--wit); }
+
+/* ---------- Hero + tool ---------- */
+.hero {
+  position: relative;
+  background:
+    /* subtiele barcode-textuur over de gradient */
+    repeating-linear-gradient(90deg,
+      rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 14px,
+      rgba(255, 255, 255, 0.035) 14px 17px, transparent 17px 38px),
+    linear-gradient(160deg, var(--inkt-diep) 0%, var(--inkt) 55%, #11406e 100%);
+  color: var(--wit);
+  text-align: center;
+  padding: 64px 20px 80px;
+}
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 14px;
+}
+.hero h1 span { color: var(--cyaan); }
+.hero > p {
+  font-size: 1.02rem;
+  color: #aebfd2;
+  max-width: 460px;
+  margin: 0 auto 36px;
+  line-height: 1.6;
+}
+
+/* ---------- Toolkaart ---------- */
+.tool-kaart {
+  position: relative;
+  overflow: hidden;
+  background: var(--wit);
+  border-radius: var(--radius);
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 18px 22px 26px;
+  color: var(--tekst);
+  box-shadow: var(--schaduw);
+  text-align: left;
+}
+/* Signatuur: scanlijn die over de kaart loopt tijdens het zoeken */
+.tool-kaart::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: -3px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--cyaan), transparent);
+  opacity: 0;
+}
+.tool-kaart.scant::after {
+  opacity: 1;
+  animation: scanlijn 1.6s ease-in-out infinite;
+}
+@keyframes scanlijn {
+  0%   { top: 0; }
+  50%  { top: calc(100% - 3px); }
+  100% { top: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tool-kaart.scant::after { animation: none; top: 0; opacity: 0.6; }
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  background: var(--papier);
+  border-radius: 10px;
+  padding: 4px;
+}
+.tab {
+  flex: 1;
+  padding: 10px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--tekst-zacht);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.tab.actief { background: var(--inkt); color: var(--wit); }
+.tab:hover:not(.actief) { background: #e6ecf3; }
+.paneel { display: none; }
+.paneel.actief { display: block; }
+
+/* Foto-paneel */
+.upload-sectie {
+  border: 2px dashed #c8d3df;
+  border-radius: 10px;
+  padding: 30px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.upload-sectie:hover, .upload-sectie:focus-visible {
+  border-color: var(--inkt);
+  background: #fbfcfe;
+}
+.upload-sectie input[type="file"] { display: none; }
+.upload-label { font-size: 0.95rem; color: var(--tekst); font-weight: 600; }
+.upload-sublabel { font-size: 0.82rem; color: var(--tekst-zacht); margin-top: 6px; }
+#foto-preview {
+  display: none;
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+/* Barcode-paneel */
+.scanner-kader {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0d1117;
+  display: none;
+  margin-bottom: 4px;
+}
+.scanner-kader video { width: 100%; max-height: 280px; display: block; object-fit: cover; }
+.zoeker {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.zoeker .vak {
+  width: 72%; height: 88px;
+  border: 2px solid var(--cyaan);
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+}
+.scanner-status {
+  font-size: 0.82rem;
+  color: var(--tekst-zacht);
+  margin-top: 10px;
+  text-align: center;
+  min-height: 18px;
+}
+.of-scheiding {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #9aa9b8;
+  font-size: 0.8rem;
+  margin: 14px 0 10px;
+}
+.of-scheiding::before, .of-scheiding::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--lijn);
+}
+.handmatig { display: flex; gap: 8px; }
+.handmatig input {
+  flex: 1;
+  padding: 11px 12px;
+  border: 1px solid #c8d3df;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+.handmatig input:focus { outline: 2px solid var(--cyaan); border-color: transparent; }
+.handmatig .knop { margin-top: 0; width: auto; padding: 11px 18px; }
+
+.knop {
+  margin-top: 12px;
+  display: block;
+  width: 100%;
+  padding: 13px;
+  font-size: 0.98rem;
+  font-family: inherit;
+  background: var(--inkt);
+  color: var(--wit);
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.knop:disabled { background: #aab6c2; cursor: not-allowed; }
+.knop:hover:not(:disabled) { background: #14529b; }
+.knop.stop { background: #8a1f1f; }
+.scan-knop-rij { display: flex; gap: 8px; }
+.scan-knop-rij .knop { flex: 1; }
+
+/* Laden / fouten */
+#laadindicator {
+  display: none;
+  margin-top: 16px;
+  color: var(--tekst-zacht);
+  text-align: center;
+  font-size: 0.85rem;
+}
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid var(--lijn);
+  border-top-color: var(--inkt);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  vertical-align: -2px;
+  margin-right: 7px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+#fout {
+  display: none;
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: var(--fout-bg);
+  border: 1px solid var(--fout-rand);
+  border-radius: 8px;
+  color: var(--fout-tekst);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+/* Resultaat */
+#resultaat { display: none; margin-top: 20px; }
+.productheader {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  background: var(--papier);
+  border-radius: 10px;
+  padding: 13px 15px;
+  margin-bottom: 10px;
+}
+#productfoto {
+  width: 64px; height: 64px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #dde4ec;
+}
+.productnaam { font-size: 0.95rem; font-weight: 600; line-height: 1.4; }
+.winkel-kaart {
+  background: var(--wit);
+  border: 1px solid var(--lijn);
+  border-radius: 10px;
+  padding: 13px 16px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.winkel-kaart.goedkoopst { border: 2px solid var(--groen); background: var(--groen-licht); }
+.winkel-kaart.niet-gevonden { opacity: 0.5; background: var(--papier); border-style: dashed; }
+.winkel-naam {
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.goedkoopst-label {
+  font-size: 0.68rem;
+  background: var(--groen);
+  color: var(--wit);
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.winkel-prijs { font-size: 1.3rem; font-weight: 700; color: var(--inkt); font-family: "Space Grotesk", sans-serif; }
+.winkel-kaart.goedkoopst .winkel-prijs { color: var(--groen); }
+.niet-gevonden-tekst { font-size: 0.85rem; color: #9aa9b8; }
+.winkel-link {
+  display: inline-block;
+  margin-top: 3px;
+  font-size: 0.82rem;
+  color: #14529b;
+  text-decoration: none;
+  font-weight: 500;
+}
+.winkel-link:hover { text-decoration: underline; }
+
+/* ---------- Functies-strook ---------- */
+.functies {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 56px 32px 64px;
+}
+.functies h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 36px;
+}
+.functie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+.functie {
+  background: var(--wit);
+  border: 1px solid var(--lijn);
+  border-radius: 12px;
+  padding: 20px 22px;
+}
+.functie h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  padding-left: 16px;
+  position: relative;
+}
+.functie h3::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 4px;
+  width: 4px; height: 14px;
+  background: var(--cyaan);
+  border-radius: 2px;
+}
+.functie p { font-size: 0.85rem; color: var(--tekst-zacht); line-height: 1.55; }
+
+/* ---------- Footer ---------- */
+.site-footer {
+  background: var(--inkt);
+  color: #8fa2b5;
+  text-align: center;
+  padding: 26px 20px;
+  font-size: 0.82rem;
+}
+.site-footer a { color: var(--cyaan); text-decoration: none; margin: 0 8px; }
+.site-footer a:hover { text-decoration: underline; }
+
+/* ---------- Juridische pagina's ---------- */
+.legal {
+  max-width: 720px;
+  margin: 56px auto;
+  padding: 0 24px 70px;
+}
+.legal h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 6px; }
+.legal .datum { color: #9aa9b8; font-size: 0.85rem; margin-bottom: 36px; }
+.legal h2 { font-size: 1.05rem; font-weight: 700; margin: 30px 0 8px; }
+.legal p, .legal li { font-size: 0.92rem; line-height: 1.7; color: #44556a; margin-bottom: 10px; }
+.legal ul { padding-left: 20px; margin-bottom: 10px; }
+.legal li { margin-bottom: 4px; }
+
+/* ---------- Mobiel ---------- */
+@media (max-width: 560px) {
+  .site-header { padding: 16px 20px; }
+  .hero { padding: 44px 16px 60px; }
+  .tool-kaart { padding: 16px 16px 22px; }
+  .functies { padding: 44px 20px 52px; }
+}

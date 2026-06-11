@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="CompariScan herkent elk product via een barcode of foto en vergelijkt direct de prijzen bij Nederlandse webshops zoals Bol.com en Coolblue.">
+    <meta name="description" content="CompariScan herkent elk product via een foto of barcode en vergelijkt direct de prijzen bij Nederlandse webshops.">
     <title>CompariScan — Vergelijk productprijzen met je camera</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -26,6 +26,13 @@
         .paneel { display: none; }
         .paneel.actief { display: block; }
 
+        .upload-sectie { border: 2px dashed #ccc; border-radius: 10px; padding: 28px 20px; text-align: center; cursor: pointer; transition: border-color 0.2s; }
+        .upload-sectie:hover, .upload-sectie:focus-visible { border-color: #0a2540; }
+        .upload-sectie input[type="file"] { display: none; }
+        .upload-label { font-size: 15px; color: #555; cursor: pointer; font-weight: 600; }
+        .upload-sublabel { font-size: 13px; color: #999; margin-top: 6px; }
+        #foto-preview { display: none; width: 100%; max-height: 220px; object-fit: contain; border-radius: 8px; margin-bottom: 12px; }
+
         .scanner-kader { position: relative; border-radius: 10px; overflow: hidden; background: #111; display: none; }
         .scanner-kader video { width: 100%; max-height: 300px; display: block; object-fit: cover; }
         .zoeker { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
@@ -34,16 +41,10 @@
         .handmatig { display: flex; gap: 8px; margin-top: 14px; }
         .handmatig input { flex: 1; padding: 11px 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
         .handmatig input:focus { outline: 2px solid #1565c0; border-color: transparent; }
-        .handmatig button { margin-top: 0; width: auto; padding: 11px 16px; }
+        .handmatig button { margin-top: 0; width: auto; padding: 11px 18px; }
         .scan-knop-rij { display: flex; gap: 8px; }
         .scan-knop-rij button.stop { background: #8a1f1f; }
         .of-scheiding { text-align: center; color: #999; font-size: 13px; margin: 14px 0 0; }
-
-        .upload-sectie { border: 2px dashed #ccc; border-radius: 10px; padding: 24px 20px; text-align: center; cursor: pointer; transition: border-color 0.2s; }
-        .upload-sectie:hover, .upload-sectie:focus-visible { border-color: #0a2540; }
-        .upload-sectie input[type="file"] { display: none; }
-        .upload-label { font-size: 15px; color: #666; cursor: pointer; }
-        #foto-preview { display: none; width: 100%; max-height: 220px; object-fit: contain; border-radius: 8px; margin-bottom: 12px; }
 
         button { margin-top: 14px; display: block; width: 100%; padding: 13px; font-size: 16px; background-color: #0a2540; color: white; border: none; cursor: pointer; border-radius: 8px; transition: background-color 0.2s; font-weight: 700; }
         button:disabled { background-color: #aaa; cursor: not-allowed; }
@@ -61,8 +62,7 @@
         .winkel-kaart { background: #f5f7fa; border-radius: 10px; padding: 14px 18px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; border: 2px solid transparent; }
         .winkel-kaart.goedkoopst { border-color: #2a9d2a; background: #f0faf0; }
         .winkel-kaart.niet-gevonden { opacity: 0.45; }
-        .winkel-info { display: flex; align-items: center; gap: 10px; }
-        .winkel-naam { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+        .winkel-naam { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; text-align: left; }
         .goedkoopst-label { font-size: 11px; background: #2a9d2a; color: white; padding: 2px 7px; border-radius: 4px; font-weight: 400; }
         .winkel-prijs { font-size: 22px; font-weight: 700; color: #c00; }
         .niet-gevonden-tekst { font-size: 14px; color: #aaa; }
@@ -72,20 +72,15 @@
 
         .steps { display: flex; justify-content: center; gap: 32px; padding: 70px 40px; flex-wrap: wrap; background: white; }
         .step { text-align: center; max-width: 220px; }
-        .step .icon { font-size: 2.8rem; margin-bottom: 16px; }
+        .step .nummer { width: 44px; height: 44px; margin: 0 auto 16px; border-radius: 50%; background: #0a2540; color: #4fc3f7; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; justify-content: center; }
         .step h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
         .step p { font-size: 0.9rem; color: #666; line-height: 1.5; }
         .features { background: #f5f7fa; padding: 70px 40px; text-align: center; }
         .features h2 { font-size: 1.9rem; font-weight: 800; margin-bottom: 48px; }
         .feature-grid { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
         .feature-card { background: white; border-radius: 12px; padding: 28px 24px; max-width: 240px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); text-align: left; }
-        .feature-card .icon { font-size: 1.8rem; margin-bottom: 12px; }
         .feature-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
         .feature-card p { font-size: 0.88rem; color: #666; line-height: 1.5; }
-        .partners { background: white; padding: 60px 40px; text-align: center; }
-        .partners h2 { font-size: 1.2rem; color: #999; font-weight: 500; margin-bottom: 32px; text-transform: uppercase; letter-spacing: 1px; }
-        .partner-logos { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; align-items: center; }
-        .partner-logos span { font-size: 1.4rem; font-weight: 800; color: #aaa; }
         footer { background: #0a2540; color: #888; text-align: center; padding: 28px 20px; font-size: 0.85rem; }
         footer a { color: #4fc3f7; text-decoration: none; margin: 0 8px; }
         footer a:hover { text-decoration: underline; }
@@ -102,43 +97,43 @@
 
     <section class="tool-sectie">
         <h1>Scan een product,<br/>vergelijk de <span>beste prijs</span></h1>
-        <p>CompariScan herkent elk product via de barcode of een foto en zoekt direct de laagste prijs bij Nederlandse webshops.</p>
+        <p>CompariScan herkent elk product via een foto of barcode en zoekt direct de laagste prijs bij Nederlandse webshops.</p>
         <div class="tool-box">
 
             <div class="tabs" role="tablist">
-                <button class="tab actief" id="tab-barcode" role="tab" aria-selected="true" onclick="wisselTab('barcode')">▮▯▮ Scan barcode</button>
-                <button class="tab" id="tab-foto" role="tab" aria-selected="false" onclick="wisselTab('foto')">📷 Herken via foto</button>
+                <button class="tab actief" id="tab-foto" role="tab" aria-selected="true" onclick="wisselTab('foto')">Maak foto</button>
+                <button class="tab" id="tab-barcode" role="tab" aria-selected="false" onclick="wisselTab('barcode')">Scan barcode</button>
+            </div>
+
+            <!-- Paneel: foto -->
+            <div class="paneel actief" id="paneel-foto" role="tabpanel">
+                <div class="upload-sectie" onclick="document.getElementById('foto').click()" role="button" tabindex="0"
+                     onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('foto').click()}">
+                    <img id="foto-preview" src="" alt="Voorbeeld van je gekozen foto">
+                    <div class="upload-label" id="upload-label">Maak een foto van het product</div>
+                    <div class="upload-sublabel">of kies een bestaande foto — het zoeken start direct</div>
+                    <input type="file" id="foto" accept="image/*" capture="environment">
+                </div>
             </div>
 
             <!-- Paneel: barcode -->
-            <div class="paneel actief" id="paneel-barcode" role="tabpanel">
+            <div class="paneel" id="paneel-barcode" role="tabpanel">
                 <div class="scanner-kader" id="scanner-kader">
                     <video id="scanner-video" playsinline muted></video>
                     <div class="zoeker"><div class="vak"></div></div>
                 </div>
                 <div class="scan-knop-rij">
-                    <button id="scan-start" onclick="startScanner()">▶️ Start camera en scan</button>
-                    <button id="scan-stop" class="stop" onclick="stopScanner('Scanner gestopt.')" style="display:none">⏹ Stop</button>
+                    <button id="scan-start" onclick="startScanner()">Start camera en scan</button>
+                    <button id="scan-stop" class="stop" onclick="stopScanner('Scanner gestopt.')" style="display:none">Stop</button>
                 </div>
                 <p class="scanner-status" id="scanner-status">Richt straks de camera op de streepjescode van het product.</p>
-                <p class="of-scheiding">— of typ de cijfers onder de streepjescode —</p>
+                <p class="of-scheiding">of typ de cijfers onder de streepjescode</p>
                 <div class="handmatig">
                     <input type="text" id="ean-invoer" inputmode="numeric" autocomplete="off" maxlength="13"
                            placeholder="bijv. 8710398526618" aria-label="Barcode handmatig invoeren"
                            onkeydown="if(event.key==='Enter') zoekViaEan(this.value)">
                     <button onclick="zoekViaEan(document.getElementById('ean-invoer').value)">Zoek</button>
                 </div>
-            </div>
-
-            <!-- Paneel: foto -->
-            <div class="paneel" id="paneel-foto" role="tabpanel">
-                <div class="upload-sectie" onclick="document.getElementById('foto').click()" role="button" tabindex="0"
-                     onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('foto').click()}">
-                    <img id="foto-preview" src="" alt="Voorbeeld van je gekozen foto">
-                    <label class="upload-label" id="upload-label">📂 Maak of kies een foto</label>
-                    <input type="file" id="foto" accept="image/*" capture="environment">
-                </div>
-                <button id="knop" onclick="herken()">🔍 Herken product & vergelijk prijzen</button>
             </div>
 
             <p id="laadindicator"><span class="spinner"></span><span id="laadtekst">Bezig...</span></p>
@@ -154,27 +149,19 @@
     </section>
 
     <section class="steps" id="hoe-werkt-het">
-        <div class="step"><div class="icon">▮▯▮</div><h3>1. Scan of fotografeer</h3><p>Richt je camera op de barcode of maak een foto van het product — in de winkel, thuis of onderweg.</p></div>
-        <div class="step"><div class="icon">🤖</div><h3>2. Automatische herkenning</h3><p>De barcode of onze AI bepaalt om welk product het precies gaat.</p></div>
-        <div class="step"><div class="icon">💶</div><h3>3. Vergelijk prijzen</h3><p>Je ziet direct de prijzen bij populaire Nederlandse webshops naast elkaar.</p></div>
-        <div class="step"><div class="icon">🛒</div><h3>4. Koop voor de beste prijs</h3><p>Klik door naar de winkel met de laagste prijs en bestel direct.</p></div>
+        <div class="step"><div class="nummer">1</div><h3>Maak een foto of scan</h3><p>Richt je camera op het product of de barcode — in de winkel, thuis of onderweg.</p></div>
+        <div class="step"><div class="nummer">2</div><h3>Automatische herkenning</h3><p>De barcode of onze AI bepaalt om welk product het precies gaat.</p></div>
+        <div class="step"><div class="nummer">3</div><h3>Vergelijk prijzen</h3><p>Je ziet direct de prijzen bij populaire Nederlandse webshops naast elkaar.</p></div>
+        <div class="step"><div class="nummer">4</div><h3>Koop voor de beste prijs</h3><p>Klik door naar de winkel met de laagste prijs en bestel direct.</p></div>
     </section>
 
     <section class="features" id="functies">
         <h2>Waarom CompariScan?</h2>
         <div class="feature-grid">
-            <div class="feature-card"><div class="icon">⚡</div><h4>Razendsnel</h4><p>Scan de barcode en zie binnen enkele seconden de prijzen van meerdere winkels.</p></div>
-            <div class="feature-card"><div class="icon">🇳🇱</div><h4>Nederlandse winkels</h4><p>We vergelijken prijzen bij bekende Nederlandse webshops zoals Bol.com en Coolblue.</p></div>
-            <div class="feature-card"><div class="icon">📱</div><h4>Werkt op elk apparaat</h4><p>Gebruik CompariScan op je telefoon, tablet of computer.</p></div>
-            <div class="feature-card"><div class="icon">🔒</div><h4>Geen account nodig</h4><p>Gewoon de site openen en scannen — klaar.</p></div>
-        </div>
-    </section>
-
-    <section class="partners">
-        <h2>Prijzen ophalen bij</h2>
-        <div class="partner-logos">
-            <span>bol.com</span>
-            <span>Coolblue</span>
+            <div class="feature-card"><h4>Razendsnel</h4><p>Scan of fotografeer en zie binnen enkele seconden de prijzen van meerdere winkels.</p></div>
+            <div class="feature-card"><h4>Nederlandse winkels</h4><p>We vergelijken prijzen bij bekende Nederlandse webshops zoals Bol.com en Coolblue.</p></div>
+            <div class="feature-card"><h4>Werkt op elk apparaat</h4><p>Gebruik CompariScan op je telefoon, tablet of computer.</p></div>
+            <div class="feature-card"><h4>Geen account nodig</h4><p>Gewoon de site openen en scannen — klaar.</p></div>
         </div>
     </section>
 
@@ -191,24 +178,26 @@
             if (naam !== "barcode") stopScanner();
             ["barcode", "foto"].forEach(t => {
                 document.getElementById("tab-" + t).classList.toggle("actief", t === naam);
-                document.getElementById("tab-" + t).setAttribute("aria-selected", t === naam);
+                document.getElementById("tab-" + t).setAttribute("aria-selected", String(t === naam));
                 document.getElementById("paneel-" + t).classList.toggle("actief", t === naam);
             });
             verbergFout();
         }
 
-        // Standaardtab: foto als er geen camera is (bijv. oude desktop)
-        (async () => {
-            try {
-                const apparaten = await navigator.mediaDevices.enumerateDevices();
-                if (!apparaten.some(d => d.kind === "videoinput")) wisselTab("foto");
-            } catch (e) { wisselTab("foto"); }
-        })();
-
         // ==================== Barcode scanner ====================
         let stream = null, scanActief = false, zxingReader = null, laatsteCode = null;
 
         function zetStatus(t) { document.getElementById("scanner-status").textContent = t; }
+
+        async function nativeScannerBeschikbaar() {
+            // Let op: Chrome op Windows/Linux definieert BarcodeDetector wél,
+            // maar ondersteunt vaak geen enkel formaat. Daarom expliciet controleren.
+            if (!("BarcodeDetector" in window)) return false;
+            try {
+                const formaten = await BarcodeDetector.getSupportedFormats();
+                return formaten.includes("ean_13");
+            } catch (e) { return false; }
+        }
 
         async function startScanner() {
             verbergFout();
@@ -216,39 +205,47 @@
                 toonFout("Je browser ondersteunt geen camera. Typ de barcode hieronder in, of gebruik de fototab.");
                 return;
             }
+            const video = document.getElementById("scanner-video");
+            document.getElementById("scan-start").style.display = "none";
+            document.getElementById("scan-stop").style.display = "block";
+            scanActief = true;
+            laatsteCode = null;
+
+            if (await nativeScannerBeschikbaar()) {
+                await startNatief(video);
+            } else {
+                await startZxing(video);
+            }
+        }
+
+        async function startNatief(video) {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: "environment", width: { ideal: 1280 } }, audio: false
                 });
             } catch (e) {
-                toonFout("Geen toegang tot de camera. Geef toestemming in je browser, of typ de barcode handmatig in.");
-                return;
+                cameraGeweigerd(); return;
             }
-            const video = document.getElementById("scanner-video");
             video.srcObject = stream;
             await video.play();
             document.getElementById("scanner-kader").style.display = "block";
-            document.getElementById("scan-start").style.display = "none";
-            document.getElementById("scan-stop").style.display = "block";
-            scanActief = true;
-            laatsteCode = null;
             zetStatus("Richt de camera op de streepjescode...");
 
-            if ("BarcodeDetector" in window) {
-                scanMetBarcodeDetector(video);
-            } else {
-                scanMetZxing(video);
-            }
-        }
-
-        async function scanMetBarcodeDetector(video) {
             const detector = new BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a"] });
+            let fouten = 0;
             const loop = async () => {
                 if (!scanActief) return;
                 try {
                     const codes = await detector.detect(video);
                     if (codes.length > 0 && verwerkDetectie(codes[0].rawValue)) return;
-                } catch (e) { /* frame overslaan */ }
+                } catch (e) {
+                    // Detector blijkt toch niet te werken: overschakelen naar ZXing
+                    if (++fouten >= 5) {
+                        if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+                        startZxing(video);
+                        return;
+                    }
+                }
                 setTimeout(loop, 150);
             };
             loop();
@@ -257,36 +254,66 @@
         function laadZxing() {
             return new Promise((res, rej) => {
                 if (window.ZXing) return res();
-                const s = document.createElement("script");
-                s.src = "https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js";
-                s.onload = res; s.onerror = rej;
-                document.head.appendChild(s);
+                const bronnen = [
+                    "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js",
+                    "https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"
+                ];
+                const probeer = (i) => {
+                    if (i >= bronnen.length) return rej(new Error("CDN niet bereikbaar"));
+                    const s = document.createElement("script");
+                    s.src = bronnen[i];
+                    s.onload = () => window.ZXing ? res() : probeer(i + 1);
+                    s.onerror = () => probeer(i + 1);
+                    document.head.appendChild(s);
+                };
+                probeer(0);
             });
         }
 
-        async function scanMetZxing(video) {
+        async function startZxing(video) {
             zetStatus("Scanner wordt geladen...");
             try { await laadZxing(); } catch (e) {
                 toonFout("De scanner kon niet worden geladen. Typ de barcode handmatig in.");
-                stopScanner(); return;
+                stopScanner(""); return;
             }
-            zetStatus("Richt de camera op de streepjescode...");
             const hints = new Map();
             hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,
                 [ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.UPC_A]);
             zxingReader = new ZXing.BrowserMultiFormatReader(hints);
-            zxingReader.decodeFromVideoElementContinuously(video, (result) => {
+            zxingReader.timeBetweenDecodingAttempts = 150;
+
+            const callback = (result) => {
                 if (result && scanActief) verwerkDetectie(result.getText());
-            });
+            };
+            try {
+                // ZXing beheert hier zelf de camerastream
+                if (typeof zxingReader.decodeFromConstraints === "function") {
+                    await zxingReader.decodeFromConstraints(
+                        { video: { facingMode: "environment", width: { ideal: 1280 } }, audio: false },
+                        video, callback);
+                } else {
+                    await zxingReader.decodeFromVideoDevice(undefined, video, callback);
+                }
+                document.getElementById("scanner-kader").style.display = "block";
+                zetStatus("Richt de camera op de streepjescode...");
+            } catch (e) {
+                console.error("ZXing camera fout:", e);
+                cameraGeweigerd();
+            }
         }
 
-        // Twee identieke detecties op rij vereist — voorkomt misleesfouten
+        function cameraGeweigerd() {
+            toonFout("Geen toegang tot de camera. Geef toestemming in je browser, of typ de barcode handmatig in.");
+            stopScanner("");
+        }
+
+        // Twee identieke detecties op rij vereist: voorkomt misleesfouten
         function verwerkDetectie(code) {
             if (!scanActief) return true;
             if (code !== laatsteCode) { laatsteCode = code; return false; }
             scanActief = false;
             if (navigator.vibrate) navigator.vibrate(100);
-            stopScanner("✅ Barcode herkend: " + code);
+            stopScanner("Barcode herkend: " + code);
             zoekViaEan(code);
             return true;
         }
@@ -295,6 +322,8 @@
             scanActief = false;
             if (zxingReader) { try { zxingReader.reset(); } catch (e) {} zxingReader = null; }
             if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+            const video = document.getElementById("scanner-video");
+            if (video) video.srcObject = null;
             document.getElementById("scanner-kader").style.display = "none";
             document.getElementById("scan-start").style.display = "block";
             document.getElementById("scan-stop").style.display = "none";
@@ -318,7 +347,7 @@
                 return;
             }
             document.getElementById("ean-invoer").value = code;
-            toonLaden("Prijzen worden opgezocht voor barcode " + code + "...");
+            toonLaden("Product en prijzen worden opgezocht voor barcode " + code + "...");
             try {
                 const response = await fetch("/barcode", {
                     method: "POST",
@@ -336,7 +365,7 @@
             }
         }
 
-        // ==================== Foto-herkenning ====================
+        // ==================== Foto-herkenning (start direct na kiezen) ====================
         document.getElementById("foto").addEventListener("change", function () {
             const foto = this.files[0];
             if (!foto) return;
@@ -345,6 +374,7 @@
             preview.style.display = "block";
             document.getElementById("upload-label").textContent = foto.name;
             verbergFout();
+            herken(foto); // direct zoeken, geen extra klik
         });
 
         async function comprimeer(foto) {
@@ -362,10 +392,7 @@
             } catch (e) { return foto; }
         }
 
-        async function herken() {
-            const foto = document.getElementById("foto").files[0];
-            if (!foto) { toonFout("Maak of kies eerst een foto."); return; }
-            document.getElementById("knop").disabled = true;
+        async function herken(foto) {
             toonLaden("Product wordt herkend en prijzen worden opgezocht... (kan 15 seconden duren)");
             try {
                 const verkleind = await comprimeer(foto);
@@ -380,7 +407,6 @@
                 toonFout(err.message);
             } finally {
                 verbergLaden();
-                document.getElementById("knop").disabled = false;
             }
         }
 
@@ -394,27 +420,20 @@
         function verbergLaden() { document.getElementById("laadindicator").style.display = "none"; }
         function toonFout(tekst) {
             const fout = document.getElementById("fout");
-            fout.textContent = "❌ " + tekst;
+            fout.textContent = tekst;
             fout.style.display = "block";
         }
         function verbergFout() { document.getElementById("fout").style.display = "none"; }
 
         function maakWinkelKaart(winkel, isGoedkoopst) {
             const kaart = document.createElement("div");
-            const info = document.createElement("div");
-            info.className = "winkel-info";
-            const logo = document.createElement("span");
-            logo.style.fontSize = "22px";
-            logo.textContent = winkel.logo;
-            info.appendChild(logo);
 
             if (!winkel.gevonden) {
                 kaart.className = "winkel-kaart niet-gevonden";
                 const naam = document.createElement("div");
                 naam.className = "winkel-naam";
                 naam.textContent = winkel.winkel;
-                info.appendChild(naam);
-                kaart.appendChild(info);
+                kaart.appendChild(naam);
                 const ng = document.createElement("div");
                 ng.className = "niet-gevonden-tekst";
                 ng.textContent = "Niet gevonden";
@@ -439,10 +458,9 @@
             link.href = winkel.link;
             link.target = "_blank";
             link.rel = "noopener noreferrer sponsored";
-            link.textContent = "🛒 Bekijk aanbieding";
+            link.textContent = "Bekijk aanbieding";
             tekstBlok.appendChild(link);
-            info.appendChild(tekstBlok);
-            kaart.appendChild(info);
+            kaart.appendChild(tekstBlok);
 
             const prijs = document.createElement("div");
             prijs.className = "winkel-prijs";

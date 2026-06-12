@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Praktische tips om slimmer online te winkelen, plus bespaargidsen per categorie: speelgoed, elektronica, verzorging en boeken.">
+  <title>Bespaartips voor online winkelen | CompariScan</title>
+  <link rel="canonical" href="https://compariscan.nl/bespaartips.html">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo" href="/">CompariScan</a>
+    <nav aria-label="Hoofdnavigatie">
+      <a href="/zo-werkt-het.html">Zo werkt het</a>
+            <a href="/bespaartips.html">Bespaartips</a>
+            <a href="/wat-is-een-ean-code.html">Wat is een EAN-code</a>
+            <a href="/over-ons.html">Over ons</a>
+    </nav>
+  </header>
+  <main class="legal artikel">
+    <h1>Bespaartips voor online winkelen</h1>
+    <p class="intro">Online is bijna alles ergens goedkoper te vinden, maar de verschillen zitten vaak in details die je makkelijk over het hoofd ziet. Met deze tips haal je meer uit elke aankoop. Wil je de diepte in voor een specifieke categorie? Onderaan vind je onze bespaargidsen.</p>
+
+    <h2>1. Vergelijk op het exacte product</h2>
+    <p>Veel producten bestaan in meerdere uitvoeringen die sterk op elkaar lijken: een ander modeljaar, een andere inhoudsmaat, een netto kleinere verpakking. Vergelijk daarom altijd op het exacte artikel, het liefst via de barcode of het modelnummer. Een prijsverschil tussen twee winkels blijkt anders nogal eens een verschil tussen twee producten te zijn.</p>
+
+    <h2>2. Reken de verzendkosten mee</h2>
+    <p>Een lagere productprijs kan volledig verdampen door verzendkosten, zeker bij aankopen onder de grens voor gratis bezorging. Kijk bij het vergelijken dus naar het totaalbedrag in het winkelmandje, niet alleen naar de prijs op de productpagina.</p>
+
+    <h2>3. Wees alert op nepkortingen</h2>
+    <p>Een doorgestreepte adviesprijs zegt weinig als het product nooit voor die prijs is verkocht. Vergelijk de actieprijs daarom altijd met wat andere winkels op dit moment vragen. Is de korting echt, dan blijft hij ook overeind naast de prijzen van de concurrentie.</p>
+
+    <h2>4. Koop buiten het seizoen</h2>
+    <p>Tuinmeubelen in september, een ventilator in oktober, wintersportkleding in maart: wie tegen de stroom in koopt, betaalt structureel minder. Andersom geldt het ook: vlak voor feestdagen en in vakantieperiodes zijn populaire artikelen zelden afgeprijsd.</p>
+
+    <h2>5. Scan in de winkel</h2>
+    <p>Sta je in een fysieke winkel, scan dan even de barcode met je telefoon. Zo zie je binnen een paar seconden of het product online voordeliger is, en kun je ter plekke beslissen of het prijsverschil het wachten op een pakketje waard is.</p>
+
+    <h2>6. Check de retourvoorwaarden</h2>
+    <p>Goedkoop kopen is pas echt goedkoop als terugsturen geen probleem is. Let op de retourtermijn en op wie de retourkosten betaalt. Bij twijfel over een maat of kleur kan een iets duurdere winkel met gratis retourneren per saldo de beste keuze zijn.</p>
+
+    <h2>Bespaargidsen per categorie</h2>
+    <div class="gids-lijst">
+      <a href="/bespaargids-speelgoed.html"><strong>Speelgoed</strong><span>Slim inkopen voor verjaardagen en feestdagen, en waarom het setnummer je beste vriend is.</span></a>
+      <a href="/bespaargids-elektronica.html"><strong>Elektronica</strong><span>Modelcycli, refurbished en het belang van het exacte typenummer.</span></a>
+      <a href="/bespaargids-verzorging.html"><strong>Verzorging</strong><span>Prijs per 100 ml, stapelacties en de waarde van huismerken.</span></a>
+      <a href="/bespaargids-boeken.html"><strong>Boeken</strong><span>Hoe de vaste boekenprijs werkt en waar je wel kunt besparen.</span></a>
+    </div>
+      <div class="cta-blok">
+        <h2>Probeer het zelf</h2>
+        <p>Maak een foto van een product of scan de barcode en zie binnen enkele seconden waar je het online vindt.</p>
+        <a class="cta-knop" href="/">Start met vergelijken</a>
+      </div>
+  </main>
+    <footer class="site-footer">
+        <p class="footer-nav">
+            <a href="/zo-werkt-het.html">Zo werkt het</a>
+            <a href="/bespaartips.html">Bespaartips</a>
+            <a href="/wat-is-een-ean-code.html">Wat is een EAN-code</a>
+            <a href="/veelgestelde-vragen.html">Veelgestelde vragen</a>
+            <a href="/over-ons.html">Over ons</a>
+        </p>
+        <p>&copy; 2026 CompariScan
+            <a href="/privacy.html">Privacybeleid</a>
+            <a href="/voorwaarden.html">Algemene voorwaarden</a>
+        </p>
+    </footer>
+</body>
+</html>

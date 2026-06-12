@@ -174,7 +174,7 @@ WINKELS = [
     {"naam": "Coolblue",     "url": "https://www.coolblue.nl/zoeken?query={q}",           "categorieen": {"elektronica", "huishouden"}},
     {"naam": "MediaMarkt",   "url": "https://www.mediamarkt.nl/nl/search.html?query={q}", "categorieen": {"elektronica"}},
     {"naam": "Kruidvat",     "url": "https://www.kruidvat.nl/search?q={q}",               "categorieen": {"verzorging", "supermarkt"}},
-    {"naam": "Etos",         "url": "https://www.etos.nl/zoeken/?q={q}",                  "categorieen": {"verzorging", "supermarkt"}},
+    {"naam": "Etos",         "url": "https://www.etos.nl/search?q={q}"   ,                  "categorieen": {"verzorging", "supermarkt"}},
     {"naam": "Trekpleister", "url": "https://www.trekpleister.nl/search?q={q}",           "categorieen": {"verzorging"}},
     {"naam": "HEMA",         "url": "https://www.hema.nl/zoeken?q={q}",                   "categorieen": {"huishouden", "wonen", "verzorging", "kleding", "speelgoed"}},
     {"naam": "Blokker",      "url": "https://www.blokker.nl/zoeken/?q={q}",               "categorieen": {"huishouden", "wonen"}},
@@ -302,9 +302,9 @@ def herken():
 
 
 def zoek_naam_via_ean(ean):
-    """Productnaam opzoeken via Open Food Facts / Open Products Facts.
-    Retourneert (naam, categorie). Een treffer in Open Food Facts betekent
-    vrijwel altijd een supermarkt- of drogisterijproduct."""
+    """Productnaam en afbeelding opzoeken via Open Food Facts / Open Products Facts.
+    Retourneert (naam, categorie, afbeelding_url). Een treffer in Open Food Facts
+    betekent vrijwel altijd een supermarkt- of drogisterijproduct."""
     bronnen = [
         (f"https://world.openfoodfacts.org/api/v2/product/{ean}.json", "supermarkt"),
         (f"https://world.openproductsfacts.org/api/v2/product/{ean}.json", "overig"),
@@ -316,12 +316,16 @@ def zoek_naam_via_ean(ean):
             product = data.get("product") or {}
             naam = (product.get("product_name") or "").strip()
             merk = (product.get("brands") or "").split(",")[0].strip()
+            afbeelding = (product.get("image_front_url")
+                          or product.get("image_url") or None)
+            if isinstance(afbeelding, str) and not afbeelding.startswith("https://"):
+                afbeelding = None  # alleen veilige https-afbeeldingen doorgeven
             if naam:
                 volledig = f"{merk} {naam}".strip() if merk and merk.lower() not in naam.lower() else naam
-                return volledig[:80], categorie
+                return volledig[:80], categorie, afbeelding
         except Exception as e:
             print(f"EAN-database fout ({url}): {e}")
-    return None, None
+    return None, None, None
 
 
 @app.route("/barcode", methods=["POST"])
@@ -336,11 +340,12 @@ def barcode():
     if not valideer_ean(ean):
         return jsonify({"fout": "Ongeldige barcode. Controleer de cijfers en probeer het opnieuw."}), 400
 
-    naam, categorie = zoek_naam_via_ean(ean)
+    naam, categorie, afbeelding = zoek_naam_via_ean(ean)
     zoekterm = naam if naam else ean
     productnaam = naam if naam else f"Barcode {ean}"
 
     return jsonify({"productnaam": productnaam,
+                    "afbeelding": afbeelding,
                     "prijzen": haal_prijzen(zoekterm, categorie or "overig")})
 
 

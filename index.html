@@ -13,7 +13,13 @@
 <body>
     <header class="site-header">
         <a class="logo" href="/">CompariScan</a>
-        <nav><a href="#functies">Functies</a></nav>
+        <nav aria-label="Hoofdnavigatie">
+            <a href="#functies">Functies</a>
+            <a class="binnenkort" aria-disabled="true" tabindex="0" title="Binnenkort beschikbaar">Zo werkt het</a>
+            <a class="binnenkort" aria-disabled="true" tabindex="0" title="Binnenkort beschikbaar">Bespaartips</a>
+            <a class="binnenkort" aria-disabled="true" tabindex="0" title="Binnenkort beschikbaar">Wat is een EAN-code</a>
+            <a class="binnenkort" aria-disabled="true" tabindex="0" title="Binnenkort beschikbaar">Over ons</a>
+        </nav>
     </header>
 
     <section class="hero">
@@ -63,7 +69,7 @@
                     <div class="productnaam" id="productnaam"></div>
                 </div>
                 <div id="winkel-lijst"></div>
-                <p class="resultaat-noot">De knoppen openen de zoekresultaten bij elke winkel. Niet elke winkel verkoopt elk product.</p>
+                <p class="resultaat-noot">De knoppen openen de zoekresultaten bij elke winkel. Grijze winkels zijn wel gecontroleerd, maar voeren dit type product doorgaans niet.</p>
             </div>
         </div>
     </section>

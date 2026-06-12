@@ -174,15 +174,14 @@ WINKELS = [
     {"naam": "Coolblue",     "url": "https://www.coolblue.nl/zoeken?query={q}",           "categorieen": {"elektronica", "huishouden"}},
     {"naam": "MediaMarkt",   "url": "https://www.mediamarkt.nl/nl/search.html?query={q}", "categorieen": {"elektronica"}},
     {"naam": "Kruidvat",     "url": "https://www.kruidvat.nl/search?q={q}",               "categorieen": {"verzorging", "supermarkt"}},
-    {"naam": "Etos",         "url": "https://www.etos.nl/search?q={q}"   ,                  "categorieen": {"verzorging", "supermarkt"}},
+    {"naam": "Etos",         "url": "https://www.etos.nl/search/?lang=nl_NL&q={q}",                  "categorieen": {"verzorging", "supermarkt"}},
     {"naam": "Trekpleister", "url": "https://www.trekpleister.nl/search?q={q}",           "categorieen": {"verzorging"}},
-    {"naam": "HEMA",         "url": "https://www.hema.nl/zoeken?q={q}",                   "categorieen": {"huishouden", "wonen", "verzorging", "kleding", "speelgoed"}},
-    {"naam": "Blokker",      "url": "https://www.blokker.nl/zoeken/?q={q}",               "categorieen": {"huishouden", "wonen"}},
+    {"naam": "HEMA",         "url": "https://www.hema.nl/search?q={q}&lang=nl_NL",                   "categorieen": {"huishouden", "wonen", "verzorging", "kleding", "speelgoed"}},
     {"naam": "fonQ",         "url": "https://www.fonq.nl/zoeken/?q={q}",                  "categorieen": {"wonen", "huishouden"}},
     {"naam": "Intertoys",    "url": "https://www.intertoys.nl/search?searchTerm={q}",     "categorieen": {"speelgoed"}},
     {"naam": "Bruna",        "url": "https://www.bruna.nl/zoeken?q={q}",                  "categorieen": {"boeken"}},
     {"naam": "Wehkamp",      "url": "https://www.wehkamp.nl/zoeken/?term={q}",            "categorieen": {"kleding", "wonen", "sport", "speelgoed"}},
-    {"naam": "Decathlon",    "url": "https://www.decathlon.nl/search?Ntt={q}",            "categorieen": {"sport"}},
+    {"naam": "Decathlon",    "url": "https://www.decathlon.nl/search?Ntt={q}",            "categorieen": {"sport", "kleding"}},
 ]
 MAX_WINKELS = 6  # maximum aantal winkels met een actieve linkknop
 

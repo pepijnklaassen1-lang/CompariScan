@@ -244,24 +244,19 @@ def index():
     return send_from_directory(".", "index.html")
 
 
-@app.route("/privacy.html")
-def privacy():
-    return send_from_directory(".", "privacy.html")
+# Eén route voor alle statische bestanden (contentpagina's, css, js,
+# sitemap, robots, favicon). Nieuwe .html-pagina's in de map werken
+# hierdoor automatisch, zonder aparte route per pagina.
+# send_from_directory beschermt tegen paden buiten de map.
+TOEGESTANE_EXTENSIES = (".html", ".css", ".js", ".xml", ".svg", ".png", ".ico")
 
 
-@app.route("/voorwaarden.html")
-def voorwaarden():
-    return send_from_directory(".", "voorwaarden.html")
-
-
-@app.route("/style.css")
-def stylesheet():
-    return send_from_directory(".", "style.css")
-
-
-@app.route("/app.js")
-def scripts():
-    return send_from_directory(".", "app.js")
+@app.route("/<path:bestand>")
+def statisch(bestand):
+    ok = bestand == "robots.txt" or bestand.endswith(TOEGESTANE_EXTENSIES)
+    if ok and "/" not in bestand:
+        return send_from_directory(".", bestand)
+    return jsonify({"fout": "Pagina niet gevonden"}), 404
 
 
 @app.errorhandler(413)

@@ -330,7 +330,8 @@ function toonResultaat(data, fotoFallback) {
     document.getElementById("productnaam").textContent = data.productnaam;
 
     const gevondenPrijzen = data.prijzen.filter(w => typeof w.prijs === "number").map(w => w.prijs);
-    const goedkoopste = gevondenPrijzen.length > 0 ? Math.min(...gevondenPrijzen) : null;
+    // "Goedkoopst" is pas een eerlijke claim als er echt iets te vergelijken valt
+    const goedkoopste = gevondenPrijzen.length >= 2 ? Math.min(...gevondenPrijzen) : null;
     const lijst = document.getElementById("winkel-lijst");
     lijst.innerHTML = "";
     let scheidingGeplaatst = false;
@@ -344,5 +345,9 @@ function toonResultaat(data, fotoFallback) {
         }
         lijst.appendChild(maakWinkelKaart(winkel, typeof winkel.prijs === "number" && winkel.prijs === goedkoopste));
     });
+    // Verplichte bronvermelding zodra prijs- of productdata van bol wordt getoond
+    const noot = document.getElementById("resultaat-noot");
+    const bolData = data.prijzen.some(w => w.winkel === "Bol.com" && typeof w.prijs === "number");
+    noot.textContent = noot.dataset.basis + (bolData ? " Prijs- en productinformatie van Bol.com." : "");
     document.getElementById("resultaat").style.display = "block";
 }

@@ -323,7 +323,8 @@ function maakWinkelKaart(winkel, isGoedkoopst) {
 function toonResultaat(data, fotoFallback) {
     const metAfbeelding = data.prijzen.find(w => w.afbeelding);
     const productfoto = document.getElementById("productfoto");
-    if (metAfbeelding) productfoto.src = metAfbeelding.afbeelding;
+    if (data.afbeelding) productfoto.src = data.afbeelding;
+    else if (metAfbeelding) productfoto.src = metAfbeelding.afbeelding;
     else if (fotoFallback) productfoto.src = URL.createObjectURL(fotoFallback);
     else productfoto.removeAttribute("src");
     document.getElementById("productnaam").textContent = data.productnaam;

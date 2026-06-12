@@ -519,8 +519,51 @@ h1, h2, h3, .logo {
 }
 .cta-knop:hover { background: var(--cyaan-fel); }
 
+.terug-link {
+  display: inline-block;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #14529b;
+  text-decoration: none;
+}
+.terug-link::before { content: "\2039\00a0"; }
+.terug-link:hover { text-decoration: underline; }
+
 .footer-nav { margin-bottom: 10px; }
 .footer-nav a { white-space: nowrap; }
+
+.footer-kolommen {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 200px));
+  justify-content: center;
+  gap: 28px 56px;
+  text-align: left;
+  margin: 0 auto 26px;
+  max-width: 760px;
+  padding: 0 8px;
+}
+.footer-kolommen h4 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--cyaan);
+  margin-bottom: 10px;
+}
+.footer-kolommen a {
+  display: block;
+  color: #8fa2b5;
+  text-decoration: none;
+  font-size: 0.85rem;
+  margin: 0 0 7px;
+  line-height: 1.4;
+}
+.footer-kolommen a:hover { color: var(--wit); text-decoration: underline; }
+@media (max-width: 560px) {
+  .footer-kolommen { grid-template-columns: 1fr 1fr; gap: 24px 28px; }
+}
 
 /* ---------- Mobiel ---------- */
 @media (max-width: 560px) {

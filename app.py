@@ -165,39 +165,61 @@ def maak_bol_link(url):
 
 # Winkels met hun zoek-URL en de categorieën die ze voeren.
 # categorieen=None betekent: verkoopt vrijwel alles, altijd tonen.
+# Let op: webshops wijzigen hun zoek-URL soms. Werkt een knop niet meer,
+# pas dan alleen de "url" van die winkel hieronder aan (zoek handmatig op
+# de site en kopieer de URL, vervang de zoekterm door {q}).
 WINKELS = [
-    {"naam": "Bol.com",    "url": "https://www.bol.com/nl/nl/s/?searchtext={q}",        "categorieen": None, "bol": True},
-    {"naam": "Amazon.nl",  "url": "https://www.amazon.nl/s?k={q}",                      "categorieen": None},
-    {"naam": "Coolblue",   "url": "https://www.coolblue.nl/zoeken?query={q}",           "categorieen": {"elektronica", "huishouden"}},
-    {"naam": "MediaMarkt", "url": "https://www.mediamarkt.nl/nl/search.html?query={q}", "categorieen": {"elektronica"}},
-    {"naam": "Kruidvat",   "url": "https://www.kruidvat.nl/search?text={q}",            "categorieen": {"verzorging", "supermarkt"}},
-    {"naam": "Intertoys",  "url": "https://www.intertoys.nl/search?q={q}",              "categorieen": {"speelgoed"}},
-    {"naam": "Wehkamp",    "url": "https://www.wehkamp.nl/zoeken/?zoekterm={q}",        "categorieen": {"kleding", "wonen", "sport", "speelgoed"}},
-    {"naam": "Decathlon",  "url": "https://www.decathlon.nl/search?Ntt={q}",            "categorieen": {"sport"}},
+    {"naam": "Bol.com",      "url": "https://www.bol.com/nl/nl/s/?searchtext={q}",        "categorieen": None, "bol": True},
+    {"naam": "Amazon.nl",    "url": "https://www.amazon.nl/s?k={q}",                      "categorieen": None},
+    {"naam": "Coolblue",     "url": "https://www.coolblue.nl/zoeken?query={q}",           "categorieen": {"elektronica", "huishouden"}},
+    {"naam": "MediaMarkt",   "url": "https://www.mediamarkt.nl/nl/search.html?query={q}", "categorieen": {"elektronica"}},
+    {"naam": "Kruidvat",     "url": "https://www.kruidvat.nl/search?q={q}",               "categorieen": {"verzorging", "supermarkt"}},
+    {"naam": "Etos",         "url": "https://www.etos.nl/zoeken/?q={q}",                  "categorieen": {"verzorging", "supermarkt"}},
+    {"naam": "Trekpleister", "url": "https://www.trekpleister.nl/search?q={q}",           "categorieen": {"verzorging"}},
+    {"naam": "HEMA",         "url": "https://www.hema.nl/zoeken?q={q}",                   "categorieen": {"huishouden", "wonen", "verzorging", "kleding", "speelgoed"}},
+    {"naam": "Blokker",      "url": "https://www.blokker.nl/zoeken/?q={q}",               "categorieen": {"huishouden", "wonen"}},
+    {"naam": "fonQ",         "url": "https://www.fonq.nl/zoeken/?q={q}",                  "categorieen": {"wonen", "huishouden"}},
+    {"naam": "Intertoys",    "url": "https://www.intertoys.nl/search?searchTerm={q}",     "categorieen": {"speelgoed"}},
+    {"naam": "Bruna",        "url": "https://www.bruna.nl/zoeken?q={q}",                  "categorieen": {"boeken"}},
+    {"naam": "Wehkamp",      "url": "https://www.wehkamp.nl/zoeken/?term={q}",            "categorieen": {"kleding", "wonen", "sport", "speelgoed"}},
+    {"naam": "Decathlon",    "url": "https://www.decathlon.nl/search?Ntt={q}",            "categorieen": {"sport"}},
 ]
-MAX_WINKELS = 5
+MAX_WINKELS = 6  # maximum aantal winkels met een actieve linkknop
 
 
 def haal_prijzen(zoekterm, categorie="overig"):
-    """Bouw per relevante winkel een resultaat. prijs=None betekent: toon een linkknop."""
+    """Bouw per winkel een resultaat. Relevante winkels komen bovenaan met een
+    linkknop (prijs=None betekent: toon een linkknop). De overige winkels worden
+    onderaan grijs meegegeven met relevant=False, zodat de bezoeker ziet dat ze
+    wel zijn meegenomen maar dit type product niet voeren."""
     z = quote(zoekterm)
-    resultaten = []
+    relevant, niet_relevant = [], []
     for w in WINKELS:
-        if w["categorieen"] is not None and categorie not in w["categorieen"]:
-            continue
-        link = w["url"].format(q=z)
-        if w.get("bol"):
-            link = maak_bol_link(link)
-        resultaten.append({
-            "winkel": w["naam"],
-            "gevonden": True,
-            "prijs": None,
-            "link": link,
-            "afbeelding": None,
-        })
-        if len(resultaten) >= MAX_WINKELS:
-            break
-    return resultaten
+        is_relevant = w["categorieen"] is None or categorie in w["categorieen"]
+        if is_relevant and len(relevant) >= MAX_WINKELS:
+            is_relevant = False  # lijst vol, toon de rest grijs
+        if is_relevant:
+            link = w["url"].format(q=z)
+            if w.get("bol"):
+                link = maak_bol_link(link)
+            relevant.append({
+                "winkel": w["naam"],
+                "gevonden": True,
+                "relevant": True,
+                "prijs": None,
+                "link": link,
+                "afbeelding": None,
+            })
+        else:
+            niet_relevant.append({
+                "winkel": w["naam"],
+                "gevonden": True,
+                "relevant": False,
+                "prijs": None,
+                "link": None,
+                "afbeelding": None,
+            })
+    return relevant + niet_relevant
 
 
 # ----------------------------------------------------------------------

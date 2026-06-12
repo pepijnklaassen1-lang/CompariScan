@@ -179,7 +179,7 @@ WINKELS = [
     {"naam": "HEMA",         "url": "https://www.hema.nl/search?q={q}&lang=nl_NL",                   "categorieen": {"huishouden", "wonen", "verzorging", "kleding", "speelgoed"}},
     {"naam": "fonQ",         "url": "https://www.fonq.nl/zoeken/?q={q}",                  "categorieen": {"wonen", "huishouden"}},
     {"naam": "Intertoys",    "url": "https://www.intertoys.nl/search?searchTerm={q}",     "categorieen": {"speelgoed"}},
-    {"naam": "Bruna",        "url": "https://www.bruna.nl/zoeken?q={q}",                  "categorieen": {"boeken"}},
+    {"naam": "Bruna",        "url": "https://www.bruna.nl/zoeken/{q}"      ,                  "categorieen": {"boeken"}},
     {"naam": "Wehkamp",      "url": "https://www.wehkamp.nl/zoeken/?term={q}",            "categorieen": {"kleding", "wonen", "sport", "speelgoed"}},
     {"naam": "Decathlon",    "url": "https://www.decathlon.nl/search?Ntt={q}",            "categorieen": {"sport", "kleding"}},
 ]

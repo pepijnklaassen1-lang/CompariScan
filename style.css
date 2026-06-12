@@ -55,6 +55,13 @@ h1, h2, h3, .logo {
   align-items: center;
   gap: 10px;
 }
+.site-header nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  justify-content: flex-end;
+}
 .site-header nav a {
   color: #b9c7d6;
   text-decoration: none;
@@ -62,6 +69,33 @@ h1, h2, h3, .logo {
   font-weight: 500;
 }
 .site-header nav a:hover { color: var(--wit); }
+/* Toekomstige pagina's: nog niet klikbaar, gedempt weergegeven */
+.site-header nav a.binnenkort {
+  opacity: 0.45;
+  cursor: default;
+  position: relative;
+}
+.site-header nav a.binnenkort:hover { color: #b9c7d6; }
+.site-header nav a.binnenkort::after {
+  content: "binnenkort";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(100% + 6px);
+  background: var(--inkt-diep);
+  color: var(--cyaan);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.site-header nav a.binnenkort:hover::after,
+.site-header nav a.binnenkort:focus-visible::after { opacity: 1; }
 
 /* ---------- Hero + tool ---------- */
 .hero {
@@ -300,6 +334,22 @@ h1, h2, h3, .logo {
 }
 .winkel-kaart.goedkoopst { border: 2px solid var(--groen); background: var(--groen-licht); }
 .winkel-kaart.niet-gevonden { opacity: 0.5; background: var(--papier); border-style: dashed; }
+.winkel-kaart.niet-relevant {
+  opacity: 0.55;
+  background: var(--papier);
+  border-style: dashed;
+  padding: 9px 16px;
+  margin-bottom: 6px;
+}
+.winkel-kaart.niet-relevant .winkel-naam { font-size: 0.85rem; font-weight: 500; color: var(--tekst-zacht); }
+.ook-gecontroleerd {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9aa9b8;
+  margin: 16px 0 8px;
+}
 .winkel-naam {
   font-size: 0.95rem;
   font-weight: 600;
@@ -415,7 +465,9 @@ h1, h2, h3, .logo {
 
 /* ---------- Mobiel ---------- */
 @media (max-width: 560px) {
-  .site-header { padding: 16px 20px; }
+  .site-header { padding: 14px 16px; flex-direction: column; gap: 10px; }
+  .site-header nav { justify-content: center; gap: 4px 16px; }
+  .site-header nav a { font-size: 0.85rem; }
   .hero { padding: 44px 16px 60px; }
   .tool-kaart { padding: 16px 16px 22px; }
   .functies { padding: 44px 20px 52px; }

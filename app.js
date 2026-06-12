@@ -255,6 +255,19 @@ function verbergFout() { document.getElementById("fout").style.display = "none";
 function maakWinkelKaart(winkel, isGoedkoopst) {
     const kaart = document.createElement("div");
 
+    if (winkel.relevant === false) {
+        kaart.className = "winkel-kaart niet-relevant";
+        const naam = document.createElement("div");
+        naam.className = "winkel-naam";
+        naam.textContent = winkel.winkel;
+        kaart.appendChild(naam);
+        const nr = document.createElement("div");
+        nr.className = "niet-gevonden-tekst";
+        nr.textContent = "Niet relevant voor dit product";
+        kaart.appendChild(nr);
+        return kaart;
+    }
+
     if (!winkel.gevonden) {
         kaart.className = "winkel-kaart niet-gevonden";
         const naam = document.createElement("div");
@@ -319,7 +332,15 @@ function toonResultaat(data, fotoFallback) {
     const goedkoopste = gevondenPrijzen.length > 0 ? Math.min(...gevondenPrijzen) : null;
     const lijst = document.getElementById("winkel-lijst");
     lijst.innerHTML = "";
+    let scheidingGeplaatst = false;
     data.prijzen.forEach(winkel => {
+        if (winkel.relevant === false && !scheidingGeplaatst) {
+            scheidingGeplaatst = true;
+            const kop = document.createElement("p");
+            kop.className = "ook-gecontroleerd";
+            kop.textContent = "Ook gecontroleerd";
+            lijst.appendChild(kop);
+        }
         lijst.appendChild(maakWinkelKaart(winkel, typeof winkel.prijs === "number" && winkel.prijs === goedkoopste));
     });
     document.getElementById("resultaat").style.display = "block";

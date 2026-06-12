@@ -3,6 +3,7 @@ import base64
 import io
 import os
 import time
+import threading
 import requests
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -12,6 +13,8 @@ from PIL import Image, UnidentifiedImageError
 
 API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 BOL_SITE_ID = os.environ.get("BOL_SITE_ID")  # optioneel: Bol.com partner site-id
+BOL_CLIENT_ID = os.environ.get("BOL_CLIENT_ID")          # optioneel: Marketing Catalog API
+BOL_CLIENT_SECRET = os.environ.get("BOL_CLIENT_SECRET")  # optioneel: Marketing Catalog API
 
 client = anthropic.Anthropic(api_key=API_KEY)
 
@@ -163,6 +166,104 @@ def maak_bol_link(url):
     return url
 
 
+# ----------------------------------------------------------------------
+# Bol Marketing Catalog API (officiele bron voor prijs, link en afbeelding)
+#
+# Werkt alleen als BOL_CLIENT_ID en BOL_CLIENT_SECRET zijn ingesteld;
+# anders valt de site terug op de gewone linkmodus voor bol.
+# Tokens zijn ongeveer 5 minuten geldig en moeten worden hergebruikt
+# (eis van bol: niet per verzoek een nieuw token aanvragen).
+# Resultaten worden kort gecachet; de affiliate-voorwaarden (art. 3.6)
+# eisen dat getoonde prijzen overeenkomen met de actuele prijzen op bol,
+# dus de cachetijd blijft bewust kort.
+# ----------------------------------------------------------------------
+BOL_CACHE_TIJD = 600  # seconden (10 minuten)
+_bol_token = {"token": None, "verloopt": 0.0}
+_bol_token_lock = threading.Lock()
+_bol_cache = {}
+
+
+def bol_token():
+    """Geef een geldig Bearer-token, hergebruik tot vlak voor het verloopt."""
+    with _bol_token_lock:
+        nu = time.time()
+        if _bol_token["token"] and nu < _bol_token["verloopt"] - 30:
+            return _bol_token["token"]
+        resp = requests.post(
+            "https://login.bol.com/token?grant_type=client_credentials",
+            auth=(BOL_CLIENT_ID, BOL_CLIENT_SECRET),
+            headers={"Accept": "application/json"},
+            timeout=6,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        _bol_token["token"] = data["access_token"]
+        _bol_token["verloopt"] = nu + float(data.get("expires_in", 299))
+        return _bol_token["token"]
+
+
+def bol_zoek_product(zoekterm=None, ean=None):
+    """Vraag het beste bol-aanbod op via de Marketing Catalog API.
+
+    Retourneert {"titel", "prijs", "url", "afbeelding"} of None.
+    Met een EAN wordt het product direct opgevraagd (13 cijfers, korter
+    aanvullen met voorloopnullen volgens de GTIN-notatie); met alleen een
+    zoekterm wordt het eerste zoekresultaat gebruikt.
+    """
+    if not (BOL_CLIENT_ID and BOL_CLIENT_SECRET):
+        return None
+    headers = {
+        "Authorization": "Bearer " + bol_token(),
+        "Accept": "application/json",
+        "Accept-Language": "nl",
+    }
+    try:
+        if ean:
+            r = requests.get(
+                f"https://api.bol.com/marketing/catalog/v1/products/{ean.zfill(13)}",
+                params={"country-code": "NL", "include-image": "true", "include-offer": "true"},
+                headers=headers, timeout=6)
+            if r.status_code == 404:
+                return None
+            r.raise_for_status()
+            p = r.json()
+        else:
+            r = requests.get(
+                "https://api.bol.com/marketing/catalog/v1/products/search",
+                params={"search-term": zoekterm, "country-code": "NL", "page-size": 1,
+                        "include-image": "true", "include-offer": "true"},
+                headers=headers, timeout=6)
+            r.raise_for_status()
+            resultaten = r.json().get("results") or []
+            if not resultaten:
+                return None
+            p = resultaten[0]
+        aanbod = p.get("offer") or {}
+        return {
+            "titel": (p.get("title") or "").strip()[:80] or None,
+            "prijs": aanbod.get("price"),
+            "url": p.get("url"),
+            "afbeelding": (p.get("image") or {}).get("url"),
+        }
+    except Exception as e:
+        print(f"Bol API fout: {e}")
+        return None
+
+
+def bol_product_gecachet(zoekterm=None, ean=None):
+    """Cache rond bol_zoek_product, zodat populaire scans de API-limiet sparen."""
+    sleutel = ("ean", ean) if ean else ("zoek", (zoekterm or "").lower())
+    nu = time.time()
+    hit = _bol_cache.get(sleutel)
+    if hit and nu - hit[0] < BOL_CACHE_TIJD:
+        return hit[1]
+    data = bol_zoek_product(zoekterm=zoekterm, ean=ean)
+    if len(_bol_cache) > 500:  # simpele bescherming tegen onbeperkte groei
+        _bol_cache.clear()
+    _bol_cache[sleutel] = (nu, data)
+    return data
+
+
 # Winkels met hun zoek-URL en de categorieën die ze voeren.
 # categorieen=None betekent: verkoopt vrijwel alles, altijd tonen.
 # Let op: webshops wijzigen hun zoek-URL soms. Werkt een knop niet meer,
@@ -186,7 +287,7 @@ WINKELS = [
 MAX_WINKELS = 6  # maximum aantal winkels met een actieve linkknop
 
 
-def haal_prijzen(zoekterm, categorie="overig"):
+def haal_prijzen(zoekterm, categorie="overig", bol_data=None):
     """Bouw per winkel een resultaat. Relevante winkels komen bovenaan met een
     linkknop (prijs=None betekent: toon een linkknop). De overige winkels worden
     onderaan grijs meegegeven met relevant=False, zodat de bezoeker ziet dat ze
@@ -198,16 +299,23 @@ def haal_prijzen(zoekterm, categorie="overig"):
         if is_relevant and len(relevant) >= MAX_WINKELS:
             is_relevant = False  # lijst vol, toon de rest grijs
         if is_relevant:
-            link = w["url"].format(q=z)
-            if w.get("bol"):
-                link = maak_bol_link(link)
+            prijs, afbeelding = None, None
+            if w.get("bol") and bol_data and bol_data.get("url"):
+                # Officiele API-data: directe productlink, prijs en afbeelding
+                link = maak_bol_link(bol_data["url"])
+                prijs = bol_data.get("prijs")
+                afbeelding = bol_data.get("afbeelding")
+            else:
+                link = w["url"].format(q=z)
+                if w.get("bol"):
+                    link = maak_bol_link(link)
             relevant.append({
                 "winkel": w["naam"],
                 "gevonden": True,
                 "relevant": True,
-                "prijs": None,
+                "prijs": prijs,
                 "link": link,
-                "afbeelding": None,
+                "afbeelding": afbeelding,
             })
         else:
             niet_relevant.append({
@@ -294,9 +402,11 @@ def herken():
     if not productnaam:
         return jsonify({"fout": "Er is geen product herkend op deze foto. Probeer een duidelijkere foto van het product of de verpakking."}), 422
 
+    bol_data = bol_product_gecachet(zoekterm=productnaam)
     return jsonify({
         "productnaam": productnaam,
-        "prijzen": haal_prijzen(productnaam, categorie)
+        "afbeelding": bol_data.get("afbeelding") if bol_data else None,
+        "prijzen": haal_prijzen(productnaam, categorie, bol_data)
     })
 
 
@@ -340,12 +450,17 @@ def barcode():
         return jsonify({"fout": "Ongeldige barcode. Controleer de cijfers en probeer het opnieuw."}), 400
 
     naam, categorie, afbeelding = zoek_naam_via_ean(ean)
+    bol_data = bol_product_gecachet(ean=ean)
+    if not naam and bol_data and bol_data.get("titel"):
+        naam = bol_data["titel"]
+    if not afbeelding and bol_data:
+        afbeelding = bol_data.get("afbeelding")
     zoekterm = naam if naam else ean
     productnaam = naam if naam else f"Barcode {ean}"
 
     return jsonify({"productnaam": productnaam,
                     "afbeelding": afbeelding,
-                    "prijzen": haal_prijzen(zoekterm, categorie or "overig")})
+                    "prijzen": haal_prijzen(zoekterm, categorie or "overig", bol_data)})
 
 
 if __name__ == "__main__":

@@ -450,7 +450,7 @@ h1, h2, h3, .logo {
 .site-footer a { color: var(--cyaan); text-decoration: none; margin: 0 8px; }
 .site-footer a:hover { text-decoration: underline; }
 
-/* ---------- Juridische pagina's ---------- */
+/* ---------- Juridische pagina's en artikelen ---------- */
 .legal {
   max-width: 720px;
   margin: 56px auto;
@@ -460,8 +460,67 @@ h1, h2, h3, .logo {
 .legal .datum { color: #9aa9b8; font-size: 0.85rem; margin-bottom: 36px; }
 .legal h2 { font-size: 1.05rem; font-weight: 700; margin: 30px 0 8px; }
 .legal p, .legal li { font-size: 0.92rem; line-height: 1.7; color: #44556a; margin-bottom: 10px; }
-.legal ul { padding-left: 20px; margin-bottom: 10px; }
+.legal ul, .legal ol { padding-left: 20px; margin-bottom: 10px; }
 .legal li { margin-bottom: 4px; }
+
+.artikel .intro {
+  font-size: 1.05rem;
+  color: #44556a;
+  line-height: 1.7;
+  margin: 0 0 28px;
+}
+.artikel a { color: #14529b; }
+
+.gids-lijst {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 18px 0 6px;
+}
+.gids-lijst a {
+  display: block;
+  background: var(--wit);
+  border: 1px solid var(--lijn);
+  border-radius: 10px;
+  padding: 16px 18px;
+  text-decoration: none;
+  color: var(--tekst);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.gids-lijst a:hover { border-color: var(--inkt); box-shadow: 0 4px 16px rgba(10, 37, 64, 0.08); }
+.gids-lijst strong {
+  display: block;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+  color: var(--inkt);
+}
+.gids-lijst span { font-size: 0.83rem; color: var(--tekst-zacht); line-height: 1.5; }
+
+.cta-blok {
+  margin-top: 44px;
+  background: var(--inkt);
+  border-radius: var(--radius);
+  padding: 30px 26px;
+  text-align: center;
+}
+.cta-blok h2 { color: var(--wit); margin: 0 0 8px; font-size: 1.15rem; }
+.cta-blok p { color: #aebfd2; margin: 0 auto 18px; max-width: 420px; }
+.cta-knop {
+  display: inline-block;
+  background: var(--cyaan);
+  color: var(--inkt-diep);
+  font-weight: 700;
+  font-family: "Space Grotesk", sans-serif;
+  text-decoration: none;
+  padding: 12px 26px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.cta-knop:hover { background: var(--cyaan-fel); }
+
+.footer-nav { margin-bottom: 10px; }
+.footer-nav a { white-space: nowrap; }
 
 /* ---------- Mobiel ---------- */
 @media (max-width: 560px) {

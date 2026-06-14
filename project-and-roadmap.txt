@@ -1,0 +1,299 @@
+============================================================
+COMPARISCAN: PROJECTSAMENVATTING EN ROADMAP
+Laatst bijgewerkt: juni 2026
+============================================================
+
+Dit bestand bevat twee delen: eerst de projectsamenvatting (wat het
+is en hoe het werkt), daarna de roadmap (wat er nog moet gebeuren).
+
+
+============================================================
+DEEL 1: PROJECTSAMENVATTING
+============================================================
+
+WAT IS HET
+----------
+CompariScan (compariscan.nl) is een Nederlandse prijsvergelijker. Een
+bezoeker maakt een foto van een product of scant de barcode, de site
+herkent het product en toont de prijzen bij Nederlandse webshops naast
+elkaar, met affiliate-links naar de winkels. Geen app, geen account,
+direct in de browser. Doelgroep: consumenten die in de winkel of thuis
+snel willen weten of iets online goedkoper is.
+
+Verdienmodel: affiliate-commissie (bol affiliate-account, geen KvK
+nodig; andere shops later via netwerken zoals Awin, TradeTracker,
+Daisycon).
+
+
+TECHNIEK
+--------
+- Frontend: statische HTML/CSS/JS (index.html, style.css, app.js),
+  geen framework.
+- Backend: Python Flask (app.py), gehost op Render (gratis plan, let
+  op slaapstand na 15 min; UptimeRobot-ping als oplossing), deploy via
+  GitHub.
+- Procfile: web: python app.py. Requirements: flask, flask-cors,
+  anthropic, requests, pillow, gunicorn.
+- Domein: compariscan.nl (CNAME aanwezig).
+- Environment variables op Render:
+    ANTHROPIC_API_KEY   (verplicht: productherkenning via Claude)
+    BOL_SITE_ID         (optioneel: zet bol-links om naar affiliate-links)
+    BOL_CLIENT_ID       (optioneel: Bol Marketing Catalog API)
+    BOL_CLIENT_SECRET   (optioneel: Bol Marketing Catalog API)
+
+
+HOE DE HERKENNING WERKT
+-----------------------
+1. Fototab: foto wordt client-side gecomprimeerd (max 1600px),
+   server-side gevalideerd en verkleind met Pillow (max 1568px, JPEG),
+   daarna herkend door Claude (model claude-haiku-4-5, prompt vraagt om
+   maximaal 4 woorden merknaam plus productnaam en een categorie,
+   antwoordt ONBEKEND als er geen product zichtbaar is).
+2. Barcodetab: live camera in de browser; native BarcodeDetector API
+   waar echt ondersteund (expliciete check via getSupportedFormats,
+   want Chrome op Windows/Linux definieert de API zonder hem te
+   ondersteunen), anders ZXing via CDN (jsdelivr met unpkg als fallback).
+   Twee identieke detecties vereist tegen misleesfouten. Handmatige
+   EAN-invoer als alternatief, met controlecijfer-validatie in front-
+   en backend.
+3. Routes: /herken (foto) en /barcode (EAN). De barcoderoute zoekt de
+   productnaam op via Open Food Facts / Open Products Facts (gratis,
+   legitiem; dekt vooral supermarkt en drogisterij).
+
+
+HOE DE PRIJZEN WERKEN (BELANGRIJKE UPDATE)
+------------------------------------------
+De site kent twee modi, en de code schakelt automatisch:
+
+a) Linkmodus (standaard, zonder bol-API-credentials). Er wordt niets
+   gescraped: webshops blokkeren dat vanaf server-IP's en de
+   bol-voorwaarden weigeren "spider"-websites. Per winkel staat een
+   knop "Bekijk actuele prijs" die naar het product bij die winkel
+   linkt.
+
+b) Prijsmodus voor bol (zodra BOL_CLIENT_ID en BOL_CLIENT_SECRET zijn
+   ingesteld). De Bol Marketing Catalog API is volledig ingebouwd in
+   app.py:
+   - bol_token(): haalt en hergebruikt een Bearer-token (geldig circa
+     5 minuten, wordt 30 seconden voor verloop ververst; eis van bol:
+     niet per verzoek een nieuw token aanvragen).
+   - bol_zoek_product(): zoekt op EAN (direct opgevraagd, aangevuld tot
+     13 cijfers) of op zoekterm (eerste zoekresultaat) en levert titel,
+     prijs, product-URL en afbeelding.
+   - bol_product_gecachet(): cachet resultaten kort (10 minuten). De
+     cachetijd blijft bewust kort omdat de affiliate-voorwaarden
+     (art. 3.6) eisen dat getoonde prijzen overeenkomen met de actuele
+     bol-prijzen.
+   Beide routes (/herken en /barcode) roepen deze laag aan. Zodra het
+   veld "prijs" een getal bevat, toont de frontend automatisch het
+   bedrag, een directe productlink ("Bekijk aanbieding") en, bij twee
+   of meer prijzen, het label "Goedkoopst". Bij getoonde bol-prijsdata
+   verschijnt automatisch de verplichte bronvermelding
+   "Prijs- en productinformatie van Bol.com".
+
+Belangrijk: de bol-API-credentials komen pas beschikbaar NA goedkeuring
+van het affiliate-account. De code is dus klaar; hij wacht op de keys.
+Voor de overige winkels (Coolblue en meer) is er nog geen prijsdata; die
+komt later via productfeeds van de affiliatenetwerken.
+
+
+WINKELS
+-------
+Veertien Nederlandse webshops met zoek-URL per categorie (in WINKELS in
+app.py): Bol.com, Amazon.nl, Coolblue, MediaMarkt, Kruidvat, Etos,
+Trekpleister, HEMA, fonQ, Intertoys, Bruna, Wehkamp, Decathlon.
+Maximaal 6 winkels krijgen een actieve knop; relevante winkels staan
+bovenaan, de rest grijs onderaan onder "Ook gecontroleerd". Werkt een
+zoekknop niet meer, dan staat in app.py beschreven hoe je alleen de
+"url" van die winkel aanpast. linktest.html (intern, noindex/nofollow)
+helpt bij het controleren van die zoeklinks.
+
+
+CONTENTPAGINA'S
+---------------
+Naast de home staan er ruim genoeg contentpagina's met originele tekst
+voor de keuringseis (10+ goed gevulde pagina's):
+- Uitleg: zo-werkt-het.html, wat-is-een-ean-code.html,
+  veelgestelde-vragen.html (met FAQ schema.org).
+- Bespaargidsen: bespaartips.html (hub) plus per categorie speelgoed,
+  elektronica, verzorging, boeken, wonen en kleding.
+- Over: over-ons.html.
+- Juridisch: privacy.html, voorwaarden.html.
+- Overig: 404.html (noindex), sitemap.xml, robots.txt.
+Alles deelt style.css.
+
+
+BEVEILIGING EN LIMIETEN
+-----------------------
+- Rate limiting: max 5 verzoeken per IP per minuut, in geheugen, met
+  periodieke opschoning.
+- Upload: max 15 MB, alleen echte afbeeldingen (Pillow-validatie),
+  alles hercodeerd naar JPEG.
+- Frontend bouwt resultaten met DOM-methodes en textContent, geen
+  innerHTML met externe data (XSS-preventie).
+- Affiliate-links krijgen rel="noopener noreferrer sponsored".
+- EAN-controlecijfer wordt zowel in de frontend als de backend
+  gevalideerd.
+
+
+DESIGNKEUZES (HUISSTIJL)
+------------------------
+- Kleuren: navy inkt (#0a2540, #071a30), scan-cyaan (#4fc3f7),
+  papierwit (#f6f8fb), groen voor goedkoopste prijs (#1e8e3e).
+- Typografie: Space Grotesk voor koppen en prijzen, Inter voor tekst
+  (via Google Fonts; vermeld in het privacybeleid).
+- Logo: het woord CompariScan als een geheel, een kleur, geen beeldmerk
+  of barcode-symbool. Focus ligt op AI-herkenning, niet op barcodes.
+- Hero: langzaam bewegende gradient (16s), respecteert
+  prefers-reduced-motion.
+- Expliciete wensen van de eigenaar: geen emoji's, geen gedachtestreepjes
+  in teksten (oogt AI-achtig), geen scan-animatie, winkelnamen
+  (Bol.com, Coolblue) niet noemen in marketingteksten. Uitzonderingen:
+  winkelnamen wel in het privacybeleid (AVG-verplichting) en in de
+  zoekresultaten zelf.
+
+
+STATUS IN EEN OOGOPSLAG
+-----------------------
+- Werkend prototype, draait in linkmodus.
+- Contentdoel voor de keuring: gehaald (12 indexeerbare pagina's).
+- Bol Marketing Catalog API: code af, wacht op affiliate-goedkeuring en
+  API-keys om echte prijzen te tonen.
+- Nog niet aangemeld bij affiliate-programma's. Dat is de eerstvolgende
+  grote stap (zie roadmap).
+- Een paar kleine opruimpunten staan open (zie roadmap, fase 1b).
+
+Concurrentiecontext: Pricebeat (pricebeat.nl) doet iets vergelijkbaars
+maar zwaarder (B.V., apps, eigen checkout, verkopersdeals). CompariScan
+onderscheidt zich bewust met lichtheid: geen download, geen registratie,
+direct resultaat.
+
+
+============================================================
+DEEL 2: ROADMAP
+============================================================
+
+Doel: van werkend prototype naar een goedgekeurde prijsvergelijker met
+echte prijzen uit officiele bronnen en affiliate-inkomsten.
+
+Sinds de vorige roadmap is er flink voortgang geboekt: de contentpagina's
+staan er (fase 1) en de Bol Marketing Catalog API is al volledig in de
+code ingebouwd (de moeilijkste stap van wat fase 3 was). De volgorde is
+daardoor verschoven. De rem zit nu vooral op de affiliate-goedkeuring,
+want zonder goedgekeurd bol-account zijn er geen API-keys en dus geen
+echte prijzen.
+
+
+FASE 1: KEURINGSKLAAR MAKEN  (grotendeels af)
+---------------------------------------------
+[x] 8 tot 12 contentpagina's met originele tekst (bespaargidsen per
+    categorie en uitlegartikelen). Gehaald: er staan 12 indexeerbare
+    pagina's.
+[x] "Over CompariScan" pagina (over-ons.html).
+[x] Footerblok zodat alle pagina's vindbaar zijn.
+[x] SEO-basis: unieke title en meta description per pagina, sitemap.xml,
+    robots.txt.
+[ ] Favicon: /favicon.svg wordt op elke pagina aangeroepen, maar het
+    bestand zelf ontbreekt in de map. Toevoegen, anders krijgt elke
+    pagina een 404 op de favicon.
+[ ] Controleer dat de tool foutloos werkt op mobiel en desktop (foto en
+    barcode), na de opruimpunten hieronder.
+[ ] Zet UptimeRobot (gratis) in om de Render-server elke 10 minuten te
+    pingen tegen de slaapstand.
+
+Klaar wanneer: de site heeft 10+ goed gevulde pagina's en alles werkt
+zonder foutmeldingen.
+
+
+FASE 1b: OPRUIMEN VOOR DE AANMELDING  (nieuw, klein maar belangrijk)
+--------------------------------------------------------------------
+Deze punten zijn nieuw geconstateerd. Het bol affiliate-programma keurt
+sites met niet-werkende of dubbele onderdelen sneller af, dus eerst
+oplossen.
+
+[ ] bespaargids-kleding.html bevat per ongeluk de inhoud van de
+    wonen-gids (zelfde titel, canonical en tekst als
+    bespaargids-wonen.html). Vervang dit door een echte kledinggids,
+    of haal de kledinglink overal weg tot de gids er is.
+[ ] bespaargidseding.html is een leeg, verdwaald bestand (waarschijnlijk
+    een mislukte hernoeming). Verwijderen.
+[ ] Footer is niet overal gelijk: sommige pagina's tonen 4 bespaargidsen,
+    andere 6 (met kleding en wonen). Maak de footer op alle pagina's
+    identiek. Idem voor de gids-lijst onderaan bespaartips.html (mist nu
+    kleding en wonen).
+[ ] Navigatiemenu bovenaan bevat alleen Zo werkt het, Bespaartips en
+    Over ons. Overweeg om Veelgestelde vragen of Wat is een EAN-code
+    ook bereikbaar te maken (nu alleen via de footer).
+
+Klaar wanneer: geen dubbele of lege pagina's meer, footer en navigatie
+overal consistent.
+
+
+FASE 2: AFFILIATE AANMELDEN  (de eerstvolgende grote stap)
+----------------------------------------------------------
+[ ] Meld de site aan via partner.bol.com (affiliate-account, geen KvK
+    nodig).
+[ ] Vul betaalgegevens (IBAN) in; kliks tellen al mee tijdens de keuring.
+[ ] Na goedkeuring: BOL_SITE_ID als environment variable op Render
+    instellen, alle bol-links worden dan automatisch affiliate-links.
+[ ] Meld de site parallel aan bij affiliatenetwerken voor andere
+    Nederlandse shops: Awin, TradeTracker en/of Daisycon (daar zit onder
+    meer Coolblue).
+
+Klaar wanneer: bol-account goedgekeurd en affiliate-links live.
+
+
+FASE 3: ECHTE PRIJZEN TONEN  (bol-deel grotendeels code-af)
+-----------------------------------------------------------
+De backend en frontend zijn hier al op voorbereid: zodra het veld "prijs"
+gevuld wordt, toont de site automatisch bedragen en het label
+"Goedkoopst" in plaats van de linkknoppen. De Bol Marketing Catalog API
+is al gekoppeld in app.py.
+
+[ ] Vraag de API-keys (client id en secret) aan in het goedgekeurde
+    bol-account en zet BOL_CLIENT_ID en BOL_CLIENT_SECRET op Render.
+    Hiermee schakelt de site voor bol automatisch over op echte prijzen,
+    productlinks en afbeeldingen.
+[x] Bol API gekoppeld in de prijslaag: zoeken op EAN en zoekterm, levert
+    prijs, titel, product-URL en afbeelding (bol_zoek_product /
+    bol_product_gecachet).
+[x] Korte caching van populaire zoekopdrachten (10 minuten) om
+    API-limieten en wachttijd te beperken en binnen de
+    prijs-actualiteitseis te blijven.
+[ ] Importeer de productfeed van het affiliatenetwerk (Coolblue en andere
+    shops) dagelijks in een kleine database (SQLite), met EAN als sleutel.
+[ ] Match zoekopdrachten op EAN tegen de feeddata voor de overige winkels.
+
+Klaar wanneer: bij een scan verschijnen echte prijzen van minimaal twee
+winkels naast elkaar.
+
+
+FASE 4: VERBETEREN EN VERBREDEN
+-------------------------------
+[ ] Voeg 1 tot 3 extra winkels toe via feeds van de affiliatenetwerken.
+[ ] Privacyvriendelijke statistieken (bijvoorbeeld Plausible of een
+    zelfgehoste teller), zodat je ziet wat mensen scannen.
+[ ] Overweeg gunicorn in het Procfile in plaats van de Flask-dev-server,
+    of een betaald Render-plan als het bezoek groeit.
+
+
+FASE 5: GROEI  (later)
+----------------------
+[ ] SEO-content uitbreiden op basis van wat mensen daadwerkelijk scannen.
+[ ] PWA maken (toevoegen aan beginscherm, voelt als een app zonder app
+    store).
+[ ] Eventueel: prijsalerts per e-mail (vereist accounts en is een flinke
+    stap, pas doen bij bewezen gebruik).
+
+
+BEWUSTE KEUZES (NIET DOEN)
+--------------------------
+- Geen scraping van webshops, ook niet tijdelijk: het werkt niet vanaf
+  een server, schendt voorwaarden en kan de affiliate-goedkeuring kosten.
+- Geen eigen checkout of verkopersdeals zoals Pricebeat; CompariScan
+  blijft licht: geen app, geen account, direct scannen in de browser.
+- Geen tracking cookies of advertenties.
+
+============================================================
+EINDE
+============================================================

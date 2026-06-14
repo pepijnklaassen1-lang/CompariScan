@@ -363,7 +363,13 @@ def statisch(bestand):
     ok = bestand == "robots.txt" or bestand.endswith(TOEGESTANE_EXTENSIES)
     if ok and "/" not in bestand:
         return send_from_directory(".", bestand)
-    return jsonify({"fout": "Pagina niet gevonden"}), 404
+    return send_from_directory(".", "404.html"), 404
+
+
+@app.errorhandler(404)
+def pagina_niet_gevonden(e):
+    # Onbekende of ontbrekende paden krijgen de nette 404-pagina.
+    return send_from_directory(".", "404.html"), 404
 
 
 @app.errorhandler(413)
